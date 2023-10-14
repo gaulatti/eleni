@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { DebraStack } from '../lib/debra-stack';
+import { DebraStack } from '../lib/DebraStack.1';
 
 const app = new cdk.App();
 new DebraStack(app, 'DebraStack', {
