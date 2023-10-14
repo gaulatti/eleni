@@ -58,6 +58,7 @@ class DBClient {
       TableName: this.tableName,
       Item: {
         url,
+        title,
         article_status: ArticleStatus.PENDING,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

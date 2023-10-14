@@ -1,56 +1,40 @@
+import { SFNClient, StartExecutionCommand } from '@aws-sdk/client-sfn';
 import axios from 'axios';
 import { load } from 'cheerio';
-import { getDbInstance } from '../utils/dal';
 
-const db = getDbInstance();
-
+const client = new SFNClient();
 const main = async (event: any, _context: any, callback: any) => {
-  try {
-    const response = await axios.get('https://lite.cnn.com');
-    const html = response.data;
+  for (const record of event.Records) {
+    const item = record.dynamodb.NewImage;
 
-    const $ = load(html);
+    if (record.eventName === 'INSERT') {
+      const url = item.url.S;
+      const title = item.title.S;
 
-    const cardLiteElements = $('.card--lite');
-    const scrapedData: {
-      href: string;
-      title: string;
-    }[] = [];
+      try {
+        const response = await axios.get(`https://lite.cnn.com${url}`);
+        const html = response.data;
+        const $ = load(html);
 
-    cardLiteElements.each((index, element) => {
-      const anchorElement = $(element).find('a');
+        const paragraphs = $('.paragraph--lite:not(:last-child)')
+          .map((index, element) => $(element).text().trim())
+          .get();
 
-      const href = anchorElement.attr('href') || '';
-      const title = anchorElement.text().trim() || '';
+        const input = {
+          stateMachineArn: process.env.STATE_MACHINE_ARN,
+          name: `Execution-${Date.now()}`,
+          input: JSON.stringify({ url, title, paragraphs }),
+        };
 
-      scrapedData.push({ href, title });
-    });
+        const command = new StartExecutionCommand(input);
+        const execution = await client.send(command);
+        console.log(execution);
 
-    const existingRecords = await db.list() || [];
-
-    /**
-     * Create DB Record
-     */
-    for (const { href, title } of scrapedData) {
-      // Check if the href already exists in the existingRecords array
-      const existingRecord = existingRecords.find((record) => record.url === href);
-
-      if (existingRecord) {
-        console.log(`Skipping ${href} as it already exists`);
-        continue;
+        console.log(`Step Function execution started with title: ${title}`);
+      } catch (error) {
+        console.error('Error starting Step Function execution:', error);
       }
-
-      await db.create(href, title);
     }
-
-    console.log(scrapedData);
-
-    console.log(scrapedData);
-
-    return callback(null, {});
-  } catch (error) {
-    console.error('Error:', error);
-    return callback(error, {});
   }
 };
 

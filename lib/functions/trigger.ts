@@ -1,23 +1,33 @@
 import { Duration, Stack } from 'aws-cdk-lib';
-import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
-import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Table } from 'aws-cdk-lib/aws-dynamodb';
+import { Runtime, StartingPosition } from 'aws-cdk-lib/aws-lambda';
+import { DynamoEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-
-const buildTriggerLambda = (stack: Stack) => {
+import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
+const buildTriggerLambda = (
+  stack: Stack,
+  table: Table,
+  stateMachine: StateMachine
+) => {
   const triggerLambda = new NodejsFunction(stack, `ArticlesToSpeechTrigger`, {
     functionName: `ArticlesToSpeechTrigger`,
     entry: './src/functions/trigger.ts',
     handler: 'main',
     runtime: Runtime.NODEJS_LATEST,
     timeout: Duration.minutes(1),
+    environment: {
+      STATE_MACHINE_ARN: stateMachine.stateMachineArn,
+    },
   });
 
-  const rule = new Rule(stack, 'ArticlesToSpeechInvokeLambdaRule', {
-    schedule: Schedule.rate(Duration.minutes(30)),
-  });
+  stateMachine.grantStartExecution(triggerLambda);
 
-  rule.addTarget(new LambdaFunction(triggerLambda));
+  triggerLambda.addEventSource(
+    new DynamoEventSource(table, {
+      batchSize: 1,
+      startingPosition: StartingPosition.LATEST,
+    })
+  );
 
   return triggerLambda;
 };
