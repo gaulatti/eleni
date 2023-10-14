@@ -1,5 +1,5 @@
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
-import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
 
 const buildBucket = (stack: Stack) => {
   const bucket = new Bucket(stack, 'ArticlesToSpeechBucket', {

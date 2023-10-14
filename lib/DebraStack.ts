@@ -1,20 +1,15 @@
-import { Duration, Stack, StackProps } from 'aws-cdk-lib';
+import { Stack, StackProps } from 'aws-cdk-lib';
+import { ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import {
   DefinitionBody,
-  Pass,
-  StateMachine,
-  Wait,
-  WaitTime,
+  StateMachine
 } from 'aws-cdk-lib/aws-stepfunctions';
-import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import { Construct } from 'constructs';
 import { buildBucket } from './assets/bucket';
 import { buildArticlesTable } from './database/articles';
+import { buildMonitorLambda } from './functions/monitor';
 import { buildPollyLambda } from './functions/polly';
 import { buildTriggerLambda } from './functions/trigger';
-import { buildMonitorLambda } from './functions/monitor';
-import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
-import { ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 export class DebraStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
@@ -29,22 +24,21 @@ export class DebraStack extends Stack {
     stateMachineRole.addManagedPolicy(pollyManagedPolicy);
 
     const stateTemplate = {
-      StartAt: 'StartSpeechSynthesisTask',
+      StartAt: 'SynthTitle',
       States: {
-        StartSpeechSynthesisTask: {
+        SynthTitle: {
           Type: 'Task',
           End: true,
           Parameters: {
             OutputS3BucketName: bucket.bucketName,
-            Text: '',
+            "Text.$": "$.title",
+            TextType: 'ssml',
             OutputFormat: 'mp3',
             OutputS3KeyPrefix: 'audio/',
-            VoiceId: 'Matthew',
+            VoiceId: 'Joanna',
           },
           Resource: 'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
-          ResultSelector: {
-            "Text.$": "$.title"
-          }
+          ResultPath: "$.titleOutput"
         },
       },
     };
