@@ -19,8 +19,8 @@ let dbInstance: DBClient | null = null;
 
 enum ArticleStatus {
   PENDING = 'PENDING',
-  BUILT = 'BUILT',
-  READY = 'READY',
+  RENDERED = 'RENDERED',
+  DELIVERED = 'DELIVERED',
   FAILED = 'FAILED',
 }
 
@@ -28,7 +28,7 @@ class DBClient {
   private tableName: string;
 
   constructor() {
-    this.tableName = 'ArticlesToSpeechTable';
+    this.tableName = 'ArticlesTable';
   }
 
   public async list() {
@@ -41,11 +41,11 @@ class DBClient {
     return response.Items;
   }
 
-  public async get(url: string) {
+  public async get(uuid: string) {
     const command = new GetCommand({
       TableName: this.tableName,
       Key: {
-        url,
+        uuid,
       },
     });
 
@@ -53,10 +53,11 @@ class DBClient {
     return response.Item;
   }
 
-  public async create(url: string, title: string) {
+  public async create(uuid: string, url: string, title: string) {
     const command = new PutCommand({
       TableName: this.tableName,
       Item: {
+        uuid,
         url,
         title,
         article_status: ArticleStatus.PENDING,
@@ -70,23 +71,34 @@ class DBClient {
     return url;
   }
 
-  public async update(url: string, status: ArticleStatus, audio_url: string) {
+  public async updateStatus(uuid: string, status: ArticleStatus) {
     let UpdateExpression =
-      'set instance_status = :status, updatedAt = :updatedAt';
+      'set article_status = :status, updatedAt = :updatedAt';
     let ExpressionAttributeValues: { [k: string]: any } = {
       ':status': status,
       ':updatedAt': new Date().toISOString(),
     };
 
-    if (audio_url) {
-      UpdateExpression = `${UpdateExpression}, audio_url = :audio_url`;
-      ExpressionAttributeValues[':audio_url'] = audio_url;
-    }
+    return await this.update(uuid, UpdateExpression, ExpressionAttributeValues);
+  }
 
+  public async updateRendered(uuid: string, mergeJob: String) {
+    let UpdateExpression =
+      'set article_status = :status, mergeId = :mergeId, updatedAt = :updatedAt';
+    let ExpressionAttributeValues: { [k: string]: any } = {
+      ':status': ArticleStatus.RENDERED,
+      ':mergeId': mergeJob,
+      ':updatedAt': new Date().toISOString(),
+    };
+
+    return await this.update(uuid, UpdateExpression, ExpressionAttributeValues);
+  }
+
+  private async update(uuid: string, UpdateExpression: string, ExpressionAttributeValues?: Record<string, any>) {
     const command = new UpdateCommand({
       TableName: this.tableName,
       Key: {
-        url,
+        uuid,
       },
       UpdateExpression,
       ExpressionAttributeValues,
@@ -96,11 +108,11 @@ class DBClient {
     return await docClient.send(command);
   }
 
-  public async delete(url: string) {
+  public async delete(uuid: string) {
     const command = new DeleteCommand({
       TableName: this.tableName,
       Key: {
-        url,
+        uuid,
       },
     });
 

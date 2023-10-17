@@ -1,11 +1,11 @@
 import { Duration, Stack } from 'aws-cdk-lib';
-import { ManagedPolicy, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { Table } from 'aws-cdk-lib/aws-dynamodb';
+import { PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { merge } from 'cheerio/lib/static';
 
-const buildMergeLambda = (stack: Stack, bucket: Bucket) => {
+const buildMergeLambda = (stack: Stack, bucket: Bucket, table: Table) => {
   const mediaConvert = new Role(stack, 'ArticlesToSpeechMergeLambdaRole', {
     assumedBy: new ServicePrincipal('mediaconvert.amazonaws.com'),
   });
@@ -38,6 +38,7 @@ const buildMergeLambda = (stack: Stack, bucket: Bucket) => {
     })
   );
 
+  table.grantReadWriteData(mergeLambda);
   bucket.grantReadWrite(mergeLambda);
 
   return mergeLambda;

@@ -3,6 +3,7 @@ import { load } from 'cheerio';
 import { getDbInstance } from '../utils/dal';
 
 const db = getDbInstance();
+import { v4 as uuidv4 } from 'uuid';
 
 const main = async (event: any, _context: any, callback: any) => {
   try {
@@ -26,26 +27,23 @@ const main = async (event: any, _context: any, callback: any) => {
       scrapedData.push({ href, title });
     });
 
-    const existingRecords = await db.list() || [];
+    const existingRecords = (await db.list()) || [];
 
     /**
-     * Create DB Record
+     * Pre-filter scrapedData to remove duplicates
      */
-    for (const { href, title } of scrapedData) {
-      // Check if the href already exists in the existingRecords array
-      const existingRecord = existingRecords.find((record) => record.url === href);
+    const uniqueScrapedData = scrapedData.filter(({ href }) => {
+      return !existingRecords.some((record) => record.url === href);
+    });
 
-      if (existingRecord) {
-        console.log(`Skipping ${href} as it already exists`);
-        continue;
-      }
-
-      await db.create(href, title);
+    /**
+     * Create DB Record for unique scrapedData
+     */
+    for (const { href, title } of uniqueScrapedData) {
+      const uuid = uuidv4();
+      await db.create(uuid, href, title);
+      console.log(`Created record for ${href}`);
     }
-
-    console.log(scrapedData);
-
-    console.log(scrapedData);
 
     return callback(null, {});
   } catch (error) {

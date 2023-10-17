@@ -2,7 +2,7 @@ import { Stack } from 'aws-cdk-lib';
 import { ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { DefinitionBody, StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
+import { DefinitionBody, JsonPath, StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 
 const buildPollyWorkflow = (
   stack: Stack,
@@ -26,6 +26,7 @@ const buildPollyWorkflow = (
         Parameters: {
           OutputS3BucketName: bucket.bucketName,
           'Text.$': '$.title',
+          Engine: 'neural',
           TextType: 'ssml',
           OutputFormat: 'mp3',
           OutputS3KeyPrefix: 'audio/',
@@ -36,23 +37,42 @@ const buildPollyWorkflow = (
       },
       SynthParagraphs: {
         Type: 'Map',
-        Next: 'Wait',
-        InputPath: '$.paragraphGroups',
+        Next: 'BakeS3',
+        InputPath: '$.textInput',
         MaxConcurrency: 5,
         Iterator: {
-          StartAt: 'SynthParagraph',
+          StartAt: 'SynthParagraphAudio',
           States: {
-            SynthParagraph: {
+            SynthParagraphAudio: {
               Type: 'Task',
-              End: true,
+              Next: 'SynthParagraphTranscription',
               Parameters: {
                 OutputS3BucketName: bucket.bucketName,
-                'Text.$': '$',
-                TextType: 'text',
+                'Text.$': '$.text',
+                TextType: 'ssml',
+                Engine: 'neural',
+                LanguageCode: 'en-US',
                 OutputFormat: 'mp3',
                 OutputS3KeyPrefix: 'audio/',
                 VoiceId: 'Joanna',
               },
+              ResultPath: '$.audioOutput',
+              Resource:
+                'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
+            },
+            SynthParagraphTranscription: {
+              Type: 'Task',
+              End: true,
+              Parameters: {
+                OutputS3BucketName: bucket.bucketName,
+                'Text.$': '$.text',
+                TextType: 'ssml',
+                Engine: 'neural',
+                OutputFormat: 'json',
+                OutputS3KeyPrefix: 'transcription/',
+                VoiceId: 'Joanna',
+              },
+              ResultPath: '$.transcriptionOutput',
               Resource:
                 'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
             },
@@ -60,9 +80,9 @@ const buildPollyWorkflow = (
         },
         ResultPath: '$.paragraphsOutput',
       },
-      Wait: {
+      BakeS3: {
         Type: 'Wait',
-        Seconds: 5,
+        Seconds: 15,
         Next: 'MergeAudioFiles',
       },
       MergeAudioFiles: {

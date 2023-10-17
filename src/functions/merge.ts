@@ -5,23 +5,24 @@ import {
   JobSettings,
   MediaConvertClient,
   Mp3RateControlMode,
-  OutputGroupType
+  OutputGroupType,
 } from '@aws-sdk/client-mediaconvert';
-import { v4 as uuidv4 } from 'uuid';
+import { getDbInstance } from '../utils/dal';
 
 const client = new MediaConvertClient({
   endpoint: 'https://q25wbt2lc.mediaconvert.us-east-1.amazonaws.com',
 });
 
+const db = getDbInstance();
+
 const main = async (event: any, _context: any, callback: any) => {
   const {
+    uuid,
     titleOutput: {
       SynthesisTask: { OutputUri: titleUrl },
     },
     paragraphsOutput,
   } = event;
-
-  const uuid = uuidv4()
 
   /**
    * Do we want to insert an intro ad here?
@@ -29,7 +30,7 @@ const main = async (event: any, _context: any, callback: any) => {
   const audioFiles = [titleUrl];
 
   for (const paragraphOutput of paragraphsOutput) {
-    audioFiles.push(paragraphOutput.SynthesisTask.OutputUri);
+    audioFiles.push(paragraphOutput.audioOutput.SynthesisTask.OutputUri);
   }
 
   /**
@@ -57,13 +58,11 @@ const main = async (event: any, _context: any, callback: any) => {
         OutputGroupSettings: {
           Type: OutputGroupType.FILE_GROUP_SETTINGS,
           FileGroupSettings: {
-            Destination: `s3://${process.env.BUCKET_NAME}/full/`,
+            Destination: `s3://${process.env.BUCKET_NAME}/full/${uuid}`,
           },
         },
         Outputs: [
           {
-            Extension: '.mp3',
-            NameModifier: uuid,
             ContainerSettings: {
               Container: ContainerType.RAW,
             },
@@ -92,7 +91,9 @@ const main = async (event: any, _context: any, callback: any) => {
     Role: process.env.MEDIA_CONVERT_ROLE_ARN,
   });
 
-  await client.send(command);
+  const output = await client.send(command);
+  console.log(JSON.stringify(output), output.Job?.Id!)
+  await db.updateRendered(uuid, output.Job?.Id!);
 
   return callback(null, {});
 };

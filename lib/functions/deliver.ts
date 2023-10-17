@@ -31,6 +31,7 @@ const buildDeliverLambda = (stack: Stack, table: Table) => {
   });
 
   rule.addTarget(new LambdaFunction(deliverLambda));
+  table.grantReadWriteData(deliverLambda);
 
   return deliverLambda;
 };
