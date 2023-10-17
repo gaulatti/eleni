@@ -82,11 +82,12 @@ class DBClient {
     return await this.update(uuid, UpdateExpression, ExpressionAttributeValues);
   }
 
-  public async updateRendered(uuid: string, mergeJob: String) {
+  public async updateRendered(uuid: string, mergeJob: String, audio_url: String) {
     let UpdateExpression =
-      'set article_status = :status, mergeId = :mergeId, updatedAt = :updatedAt';
+      'set article_status = :status, mergeId = :mergeId, audio_url: String, updatedAt = :updatedAt';
     let ExpressionAttributeValues: { [k: string]: any } = {
       ':status': ArticleStatus.RENDERED,
+      ':audio_url': audio_url,
       ':mergeId': mergeJob,
       ':updatedAt': new Date().toISOString(),
     };

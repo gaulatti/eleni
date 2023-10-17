@@ -86,14 +86,15 @@ const main = async (event: any, _context: any, callback: any) => {
     ],
   };
 
+  const audioUrl = `https://${process.env.BUCKET_NAME}/full/${uuid}.mp3`
+
   const command = new CreateJobCommand({
     Settings: jobSettings,
     Role: process.env.MEDIA_CONVERT_ROLE_ARN,
   });
 
   const output = await client.send(command);
-  console.log(JSON.stringify(output), output.Job?.Id!)
-  await db.updateRendered(uuid, output.Job?.Id!);
+  await db.updateRendered(uuid, output.Job?.Id!, audioUrl);
 
   return callback(null, {});
 };
