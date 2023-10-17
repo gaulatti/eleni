@@ -88,7 +88,7 @@ const main = async (event: any, _context: any, callback: any) => {
     ],
   };
 
-  const audioUrl = `https://s3.us-east-1.amazonaws.com/${process.env.BUCKET_NAME}/full/${uuid}.mp3`
+  const audioUrl = `https://s3.us-east-1.amazonaws.com/${process.env.BUCKET_NAME}/full/${uuid}-${language}.mp3`
 
   const command = new CreateJobCommand({
     Settings: jobSettings,

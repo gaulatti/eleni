@@ -7,23 +7,9 @@ const excapeSSMLCharacters = (text: string) => {
     .replace(/>/g, '&gt;');
 };
 
-const wrapNews = (
-  selectedVoice: { news: boolean; name: string },
-  text: string
-) => {
-  if (selectedVoice.news) {
-    return `<amazon:domain name='news'>${text}</amazon:domain>`;
-  } else {
-    return text;
-  }
-};
-
 const main = async (event: any, _context: any, callback: any) => {
   const { selectedVoice, language, text, title, byline } = event;
-  const preparedTitle = `<speak>${wrapNews(
-    selectedVoice,
-    `${excapeSSMLCharacters(title)}<p>${excapeSSMLCharacters(byline)}</p>`
-  )}</speak>`;
+  const preparedTitle = `<speak>${`${excapeSSMLCharacters(title)}<p>${excapeSSMLCharacters(byline)}</p>`}</speak>`;
 
   const paragraphs = text
     .split('\n')
@@ -38,7 +24,7 @@ const main = async (event: any, _context: any, callback: any) => {
       currentGroup.push(paragraph);
     } else {
       paragraphGroups.push(
-        `<speak>${wrapNews(selectedVoice, currentGroup.join(' '))}</speak>`
+        `<speak>${currentGroup.join(' ')}</speak>`
       );
       currentGroup = [paragraph];
     }
@@ -47,7 +33,7 @@ const main = async (event: any, _context: any, callback: any) => {
   // Add the last group if not empty
   if (currentGroup.length > 0) {
     paragraphGroups.push(
-      `<speak>${wrapNews(selectedVoice, currentGroup.join(' '))}</speak>`
+      `<speak>${currentGroup.join(' ')}</speak>`
     );
   }
 
