@@ -7,9 +7,18 @@ const excapeSSMLCharacters = (text: string) => {
     .replace(/>/g, '&gt;');
 };
 
+const delay = async (milliseconds = 1000) => {
+  return new Promise(resolve => {
+      setTimeout(resolve, milliseconds);
+  });
+}
+
 const main = async (event: any, _context: any, callback: any) => {
   const { selectedVoice, language, text, title, byline } = event;
   const preparedTitle = `<speak>${`${excapeSSMLCharacters(title)}<p>${excapeSSMLCharacters(byline)}</p>`}</speak>`;
+
+  const delayAmount = Math.random() * 2000;
+  await delay(delayAmount);
 
   const paragraphs = text
     .split('\n')

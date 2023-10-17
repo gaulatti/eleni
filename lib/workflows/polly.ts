@@ -22,130 +22,6 @@ const buildPollyWorkflow = (
     assumedBy: new ServicePrincipal('states.amazonaws.com'),
   });
 
-  const stateTemplate = {
-    StartAt: 'SynthTitle',
-    States: {
-      SynthTitle: {
-        Type: 'Task',
-        Next: 'SynthParagraphs',
-        Parameters: {
-          OutputS3BucketName: bucket.bucketName,
-          'Text.$': '$.title',
-          Engine: 'neural',
-          TextType: 'ssml',
-          OutputFormat: 'mp3',
-          LanguageCode: 'en-US',
-          OutputS3KeyPrefix: 'audio/',
-          VoiceId: 'Joanna',
-        },
-        Retry: [
-          {
-            ErrorEquals: ['States.ALL'],
-            BackoffRate: 2,
-            IntervalSeconds: 2,
-            MaxAttempts: 6,
-            Comment: 'RetryPolly',
-          },
-        ],
-        Resource: 'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
-        ResultPath: '$.titleOutput',
-      },
-      SynthParagraphs: {
-        Type: 'Map',
-        Next: 'BakeS3',
-        InputPath: '$.textInput',
-        MaxConcurrency: 5,
-        Iterator: {
-          StartAt: 'SynthParagraphAudio',
-          States: {
-            SynthParagraphAudio: {
-              Type: 'Task',
-              Next: 'SynthParagraphTranscription',
-              Parameters: {
-                OutputS3BucketName: bucket.bucketName,
-                'Text.$': '$.text',
-                TextType: 'ssml',
-                Engine: 'neural',
-                LanguageCode: 'en-US',
-                OutputFormat: 'mp3',
-                OutputS3KeyPrefix: 'audio/',
-                VoiceId: 'Joanna',
-              },
-              ResultPath: '$.audioOutput',
-              Resource:
-                'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
-              Retry: [
-                {
-                  ErrorEquals: ['States.ALL'],
-                  BackoffRate: 2,
-                  IntervalSeconds: 2,
-                  MaxAttempts: 3,
-                  Comment: 'RetryPolly',
-                },
-              ],
-            },
-            SynthParagraphTranscription: {
-              Type: 'Task',
-              End: true,
-              Parameters: {
-                OutputS3BucketName: bucket.bucketName,
-                'Text.$': '$.text',
-                TextType: 'ssml',
-                Engine: 'neural',
-                LanguageCode: 'en-US',
-                OutputFormat: 'json',
-                OutputS3KeyPrefix: 'transcription/',
-                SpeechMarkTypes: ['sentence'],
-                VoiceId: 'Joanna',
-              },
-              ResultPath: '$.transcriptionOutput',
-              Resource:
-                'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
-              Retry: [
-                {
-                  ErrorEquals: ['States.ALL'],
-                  BackoffRate: 2,
-                  IntervalSeconds: 2,
-                  MaxAttempts: 3,
-                  Comment: 'RetryPolly',
-                },
-              ],
-            },
-          },
-        },
-        ResultPath: '$.paragraphsOutput',
-      },
-      BakeS3: {
-        Type: 'Wait',
-        Seconds: 15,
-        Next: 'MergeAudioFiles',
-      },
-      MergeAudioFiles: {
-        Type: 'Task',
-        End: true,
-        Resource: 'arn:aws:states:::lambda:invoke',
-        OutputPath: '$.Payload',
-        Parameters: {
-          'Payload.$': '$',
-          FunctionName: mergeLambda.functionArn,
-        },
-        Retry: [
-          {
-            ErrorEquals: [
-              'Lambda.ServiceException',
-              'Lambda.AWSLambdaException',
-              'Lambda.SdkClientException',
-              'Lambda.TooManyRequestsException',
-            ],
-            IntervalSeconds: 1,
-            MaxAttempts: 3,
-            BackoffRate: 2,
-          },
-        ],
-      },
-    },
-  };
-
   const waveTemplate = (wave: number) => ({
     StartAt: `PreTranslate${wave}`,
     States: {
@@ -408,73 +284,73 @@ const buildPollyWorkflow = (
         Type: 'Map',
         ItemsPath: '$.languages',
         Iterator: waveTemplate(1),
-        Next: 'Reset-Wave2',
-      },
-      'Reset-Wave2': {
-        Type: 'Pass',
-        Next: 'Languages-Wave2',
-        Result: { languages: languages.wave2 },
-        ResultPath: '$',
-        Parameters: {},
-      },
-      'Languages-Wave2': {
-        Type: 'Map',
-        ItemsPath: '$.languages',
-        Iterator: waveTemplate(2),
-        Next: 'Reset-Wave3',
-      },
-      'Reset-Wave3': {
-        Type: 'Pass',
-        Next: 'Languages-Wave3',
-        Result: { languages: languages.wave3 },
-        ResultPath: '$',
-        Parameters: {},
-      },
-      'Languages-Wave3': {
-        Type: 'Map',
-        ItemsPath: '$.languages',
-        Iterator: waveTemplate(3),
-        Next: 'Reset-Wave4',
-      },
-      'Reset-Wave4': {
-        Type: 'Pass',
-        Next: 'Languages-Wave4',
-        Result: { languages: languages.wave4 },
-        ResultPath: '$',
-        Parameters: {},
-      },
-      'Languages-Wave4': {
-        Type: 'Map',
-        ItemsPath: '$.languages',
-        Iterator: waveTemplate(4),
-        Next: 'Reset-Wave5',
-      },
-      'Reset-Wave5': {
-        Type: 'Pass',
-        Next: 'Languages-Wave5',
-        Result: { languages: languages.wave5 },
-        ResultPath: '$',
-        Parameters: {},
-      },
-      'Languages-Wave5': {
-        Type: 'Map',
-        ItemsPath: '$.languages',
-        Iterator: waveTemplate(5),
-        Next: 'Reset-Wave6',
-      },
-      'Reset-Wave6': {
-        Type: 'Pass',
-        Next: 'Languages-Wave6',
-        Result: { languages: languages.wave6 },
-        ResultPath: '$',
-        Parameters: {},
-      },
-      'Languages-Wave6': {
-        Type: 'Map',
-        ItemsPath: '$.languages',
-        Iterator: waveTemplate(6),
         End: true,
       },
+      // 'Reset-Wave2': {
+      //   Type: 'Pass',
+      //   Next: 'Languages-Wave2',
+      //   Result: { languages: languages.wave2 },
+      //   ResultPath: '$',
+      //   Parameters: {},
+      // },
+      // 'Languages-Wave2': {
+      //   Type: 'Map',
+      //   ItemsPath: '$.languages',
+      //   Iterator: waveTemplate(2),
+      //   Next: 'Reset-Wave3',
+      // },
+      // 'Reset-Wave3': {
+      //   Type: 'Pass',
+      //   Next: 'Languages-Wave3',
+      //   Result: { languages: languages.wave3 },
+      //   ResultPath: '$',
+      //   Parameters: {},
+      // },
+      // 'Languages-Wave3': {
+      //   Type: 'Map',
+      //   ItemsPath: '$.languages',
+      //   Iterator: waveTemplate(3),
+      //   Next: 'Reset-Wave4',
+      // },
+      // 'Reset-Wave4': {
+      //   Type: 'Pass',
+      //   Next: 'Languages-Wave4',
+      //   Result: { languages: languages.wave4 },
+      //   ResultPath: '$',
+      //   Parameters: {},
+      // },
+      // 'Languages-Wave4': {
+      //   Type: 'Map',
+      //   ItemsPath: '$.languages',
+      //   Iterator: waveTemplate(4),
+      //   Next: 'Reset-Wave5',
+      // },
+      // 'Reset-Wave5': {
+      //   Type: 'Pass',
+      //   Next: 'Languages-Wave5',
+      //   Result: { languages: languages.wave5 },
+      //   ResultPath: '$',
+      //   Parameters: {},
+      // },
+      // 'Languages-Wave5': {
+      //   Type: 'Map',
+      //   ItemsPath: '$.languages',
+      //   Iterator: waveTemplate(5),
+      //   Next: 'Reset-Wave6',
+      // },
+      // 'Reset-Wave6': {
+      //   Type: 'Pass',
+      //   Next: 'Languages-Wave6',
+      //   Result: { languages: languages.wave6 },
+      //   ResultPath: '$',
+      //   Parameters: {},
+      // },
+      // 'Languages-Wave6': {
+      //   Type: 'Map',
+      //   ItemsPath: '$.languages',
+      //   Iterator: waveTemplate(6),
+      //   End: true,
+      // },
     },
   };
 
