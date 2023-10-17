@@ -19,64 +19,68 @@ const main = async (event: any, _context: any, callback: any) => {
     if (record.eventName === 'INSERT') {
       const uuid = item.uuid.S;
       const url = item.url.S;
-      const articleTitle = item.title.S;
+      const title = item.title.S;
 
       try {
         const response = await axios.get(`https://lite.cnn.com${url}`);
         const html = response.data;
         const $ = load(html);
 
-        const paragraphs = $('.paragraph--lite:not(:last-child)')
-          .map(
-            (index, element) =>
-              `<p>${excapeSSMLCharacters($(element).text().trim())}</p>`
-          )
-          .get();
-
-        const maxCharacterLimit = 2900;
-        const paragraphGroups = [];
-        let currentGroup: string[] = [];
-
-        for (const paragraph of paragraphs) {
-          if (
-            currentGroup.join(' ').length + paragraph.length <=
-            maxCharacterLimit
-          ) {
-            currentGroup.push(paragraph);
-          } else {
-            paragraphGroups.push(
-              `<speak><amazon:domain name='news'>${currentGroup.join(
-                ' '
-              )}</amazon:domain></speak>`
-            );
-            currentGroup = [paragraph];
-          }
-        }
-
-        // Add the last group if not empty
-        if (currentGroup.length > 0) {
-          paragraphGroups.push(
-            `<speak><amazon:domain name='news'>${currentGroup.join(
-              ' '
-            )}</amazon:domain></speak>`
-          );
-        }
-
-        const textInput = paragraphGroups.map((text) => ({ text }));
-
         const byline = $('.byline--lite').text().trim();
-        /**
-         * TODO: <amazon:domain name="news"> is not supported in SSML voice (as per the errors)
-         * but it is supported in SSML speech (as per the docs). I'm not sure why this is the case.
-         */
-        const title = `<speak><amazon:domain name='news'>${excapeSSMLCharacters(
-          articleTitle
-        )}<p>${excapeSSMLCharacters(byline)}</p></amazon:domain></speak>`;
+        const text = $('.paragraph--lite:not(:last-child)')
+          .map((index, element) => ($(element).text().trim()))
+          .get().join("\n");
+
+        // const paragraphs = $('.paragraph--lite:not(:last-child)')
+        //   .map(
+        //     (index, element) =>
+        //       `<p>${excapeSSMLCharacters($(element).text().trim())}</p>`
+        //   )
+        //   .get();
+
+        // const maxCharacterLimit = 2900;
+        // const paragraphGroups = [];
+        // let currentGroup: string[] = [];
+
+        // for (const paragraph of paragraphs) {
+        //   if (
+        //     currentGroup.join(' ').length + paragraph.length <=
+        //     maxCharacterLimit
+        //   ) {
+        //     currentGroup.push(paragraph);
+        //   } else {
+        //     paragraphGroups.push(
+        //       `<speak><amazon:domain name='news'>${currentGroup.join(
+        //         ' '
+        //       )}</amazon:domain></speak>`
+        //     );
+        //     currentGroup = [paragraph];
+        //   }
+        // }
+
+        // // Add the last group if not empty
+        // if (currentGroup.length > 0) {
+        //   paragraphGroups.push(
+        //     `<speak><amazon:domain name='news'>${currentGroup.join(
+        //       ' '
+        //     )}</amazon:domain></speak>`
+        //   );
+        // }
+
+        // const textInput = paragraphGroups.map((text) => ({ text }));
+
+        // /**
+        //  * TODO: <amazon:domain name="news"> is not supported in SSML voice (as per the errors)
+        //  * but it is supported in SSML speech (as per the docs). I'm not sure why this is the case.
+        //  */
+        // const title = `<speak><amazon:domain name='news'>${excapeSSMLCharacters(
+        //   articleTitle
+        // )}<p>${excapeSSMLCharacters(byline)}</p></amazon:domain></speak>`;
 
         const input = {
           stateMachineArn: process.env.STATE_MACHINE_ARN,
-          name: `Execution-${Date.now()}`,
-          input: JSON.stringify({ uuid, url, title, textInput }),
+          name: uuid,
+          input: JSON.stringify({ uuid, url, title, text, byline }),
         };
 
         const command = new StartExecutionCommand(input);

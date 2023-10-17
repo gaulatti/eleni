@@ -10,6 +10,8 @@ import { buildMergeLambda } from './functions/merge';
 import { buildMonitorLambda } from './functions/monitor';
 import { buildTriggerLambda } from './functions/trigger';
 import { buildPollyWorkflow } from './workflows/polly';
+import { buildPreTranslateLambda } from './functions/pre_translate';
+import { buildPrePollyLambda } from './functions/pre_polly';
 export class DebraStack extends Stack {
   constructor(scope: Construct, uuid: string, props?: StackProps) {
     super(scope, uuid, props);
@@ -21,6 +23,8 @@ export class DebraStack extends Stack {
     const deliverLambda = buildDeliverLambda(this, articlesTable);
     const listLambda = buildListLambda(this, articlesTable);
     const getLambda = buildGetLambda(this, articlesTable);
+    const preTranslateLambda = buildPreTranslateLambda(this);
+    const prePollyLambda = buildPrePollyLambda(this);
 
     const api = new RestApi(this, 'ArticlesToSpeechApi', {
       restApiName: 'ArticlesToSpeech API',
@@ -38,7 +42,7 @@ export class DebraStack extends Stack {
       },
     });
 
-    const stateMachine = buildPollyWorkflow(this, bucket, mergeLambda);
+    const stateMachine = buildPollyWorkflow(this, bucket, mergeLambda, preTranslateLambda, prePollyLambda);
     const triggerLambda = buildTriggerLambda(this, articlesTable, stateMachine);
   }
 }

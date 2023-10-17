@@ -23,6 +23,7 @@ const main = async (event: any, _context: any, callback: any) => {
     },
     paragraphsOutput,
   } = event;
+  console.log(event)
 
   /**
    * Do we want to insert an intro ad here?
