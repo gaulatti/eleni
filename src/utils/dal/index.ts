@@ -84,7 +84,7 @@ class DBClient {
 
   public async updateRendered(uuid: string, mergeJob: String, audio_url: String) {
     let UpdateExpression =
-      'set article_status = :status, mergeId = :mergeId, audio_url: String, updatedAt = :updatedAt';
+      'set article_status = :status, mergeId = :mergeId, audio_url = :audio_url, updatedAt = :updatedAt';
     let ExpressionAttributeValues: { [k: string]: any } = {
       ':status': ArticleStatus.RENDERED,
       ':audio_url': audio_url,

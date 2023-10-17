@@ -2,6 +2,15 @@ import { SFNClient, StartExecutionCommand } from '@aws-sdk/client-sfn';
 import axios from 'axios';
 import { load } from 'cheerio';
 
+const excapeSSMLCharacters = (text: string) => {
+  return text
+    .replace(/"/g, '&quot;')
+    .replace(/&/g, '&amp;')
+    .replace(/'/g, '&apos;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+};
+
 const client = new SFNClient();
 const main = async (event: any, _context: any, callback: any) => {
   for (const record of event.Records) {
@@ -18,7 +27,10 @@ const main = async (event: any, _context: any, callback: any) => {
         const $ = load(html);
 
         const paragraphs = $('.paragraph--lite:not(:last-child)')
-          .map((index, element) => `<p>${$(element).text().trim()}</p>`)
+          .map(
+            (index, element) =>
+              `<p>${excapeSSMLCharacters($(element).text().trim())}</p>`
+          )
           .get();
 
         const maxCharacterLimit = 2900;
@@ -32,14 +44,22 @@ const main = async (event: any, _context: any, callback: any) => {
           ) {
             currentGroup.push(paragraph);
           } else {
-            paragraphGroups.push(`<speak><amazon:domain name='news'>${currentGroup.join(' ')}</amazon:domain></speak>`);
+            paragraphGroups.push(
+              `<speak><amazon:domain name='news'>${currentGroup.join(
+                ' '
+              )}</amazon:domain></speak>`
+            );
             currentGroup = [paragraph];
           }
         }
 
         // Add the last group if not empty
         if (currentGroup.length > 0) {
-          paragraphGroups.push(`<speak><amazon:domain name='news'>${currentGroup.join(' ')}</amazon:domain></speak>`);
+          paragraphGroups.push(
+            `<speak><amazon:domain name='news'>${currentGroup.join(
+              ' '
+            )}</amazon:domain></speak>`
+          );
         }
 
         const textInput = paragraphGroups.map((text) => ({ text }));
@@ -49,7 +69,9 @@ const main = async (event: any, _context: any, callback: any) => {
          * TODO: <amazon:domain name="news"> is not supported in SSML voice (as per the errors)
          * but it is supported in SSML speech (as per the docs). I'm not sure why this is the case.
          */
-        const title = `<speak><amazon:domain name='news'>${articleTitle}<p>${byline}</p></amazon:domain></speak>`;
+        const title = `<speak><amazon:domain name='news'>${excapeSSMLCharacters(
+          articleTitle
+        )}<p>${excapeSSMLCharacters(byline)}</p></amazon:domain></speak>`;
 
         const input = {
           stateMachineArn: process.env.STATE_MACHINE_ARN,

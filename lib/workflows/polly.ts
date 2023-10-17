@@ -2,7 +2,11 @@ import { Stack } from 'aws-cdk-lib';
 import { ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { DefinitionBody, JsonPath, StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
+import {
+  DefinitionBody,
+  JsonPath,
+  StateMachine,
+} from 'aws-cdk-lib/aws-stepfunctions';
 
 const buildPollyWorkflow = (
   stack: Stack,
@@ -32,6 +36,15 @@ const buildPollyWorkflow = (
           OutputS3KeyPrefix: 'audio/',
           VoiceId: 'Joanna',
         },
+        Retry: [
+          {
+            ErrorEquals: ['States.ALL'],
+            BackoffRate: 2,
+            IntervalSeconds: 2,
+            MaxAttempts: 6,
+            Comment: 'RetryPolly',
+          },
+        ],
         Resource: 'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
         ResultPath: '$.titleOutput',
       },
@@ -59,6 +72,15 @@ const buildPollyWorkflow = (
               ResultPath: '$.audioOutput',
               Resource:
                 'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
+              Retry: [
+                {
+                  ErrorEquals: ['States.ALL'],
+                  BackoffRate: 2,
+                  IntervalSeconds: 2,
+                  MaxAttempts: 3,
+                  Comment: 'RetryPolly',
+                },
+              ],
             },
             SynthParagraphTranscription: {
               Type: 'Task',
@@ -70,11 +92,21 @@ const buildPollyWorkflow = (
                 Engine: 'neural',
                 OutputFormat: 'json',
                 OutputS3KeyPrefix: 'transcription/',
+                SpeechMarkTypes: ["sentence", "ssml", "viseme","word"],
                 VoiceId: 'Joanna',
               },
               ResultPath: '$.transcriptionOutput',
               Resource:
                 'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
+              Retry: [
+                {
+                  ErrorEquals: ['States.ALL'],
+                  BackoffRate: 2,
+                  IntervalSeconds: 2,
+                  MaxAttempts: 3,
+                  Comment: 'RetryPolly',
+                },
+              ],
             },
           },
         },
