@@ -1,4 +1,4 @@
-const languages = {
+const languages: Record<string, any> = {
   wave1: [
     {
       code: 'ar-AE',
@@ -37,7 +37,7 @@ const languages = {
       items: [
         { name: 'Joanna', news: true },
         { name: 'Matthew', news: true },
-      ],
+      ], translate: 'en'
     },
     { code: 'fi-FI', items: [{ name: 'Suvi', news: false }], translate: 'fi' },
     { code: 'fr-BE', items: [{ name: 'Isabelle', news: false }], translate: 'fr' },
@@ -55,8 +55,8 @@ const languages = {
       code: 'fr-FR',
       translate: 'fr',
       items: [
-        { name: 'Léa', news: false },
-        { name: 'Rémi', news: false },
+        { name: 'Lea', news: false },
+        { name: 'Remi', news: false },
       ],
     },
     {
@@ -89,7 +89,6 @@ const languages = {
       ],
     },
     { code: 'ko-KR', items: [{ name: 'Seoyeon', news: false }], translate: 'ko' },
-    { code: 'nb-NO', items: [{ name: 'Ida', news: false }], translate: 'nb' },
     { code: 'pl-PL', items: [{ name: 'Ola', news: false }], translate: 'pl' },
   ],
   wave6: [

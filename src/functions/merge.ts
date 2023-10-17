@@ -8,6 +8,7 @@ import {
   OutputGroupType,
 } from '@aws-sdk/client-mediaconvert';
 import { getDbInstance } from '../utils/dal';
+import { languageMappings } from '../utils/languageMappings';
 
 const client = new MediaConvertClient({
   endpoint: 'https://q25wbt2lc.mediaconvert.us-east-1.amazonaws.com',
@@ -18,12 +19,12 @@ const db = getDbInstance();
 const main = async (event: any, _context: any, callback: any) => {
   const {
     uuid,
+    language,
     titleOutput: {
       SynthesisTask: { OutputUri: titleUrl },
     },
     paragraphsOutput,
   } = event;
-  console.log(event)
 
   /**
    * Do we want to insert an intro ad here?
@@ -59,7 +60,7 @@ const main = async (event: any, _context: any, callback: any) => {
         OutputGroupSettings: {
           Type: OutputGroupType.FILE_GROUP_SETTINGS,
           FileGroupSettings: {
-            Destination: `s3://${process.env.BUCKET_NAME}/full/${uuid}`,
+            Destination: `s3://${process.env.BUCKET_NAME}/full/${uuid}-${language}`,
           },
         },
         Outputs: [
@@ -87,7 +88,7 @@ const main = async (event: any, _context: any, callback: any) => {
     ],
   };
 
-  const audioUrl = `https://${process.env.BUCKET_NAME}/full/${uuid}.mp3`
+  const audioUrl = `https://s3.us-east-1.amazonaws.com/${process.env.BUCKET_NAME}/full/${uuid}.mp3`
 
   const command = new CreateJobCommand({
     Settings: jobSettings,
@@ -95,7 +96,7 @@ const main = async (event: any, _context: any, callback: any) => {
   });
 
   const output = await client.send(command);
-  await db.updateRendered(uuid, output.Job?.Id!, audioUrl);
+  await db.createMergeJob(output.Job?.Id!, uuid, audioUrl, language);
 
   return callback(null, {});
 };

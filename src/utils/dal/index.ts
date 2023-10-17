@@ -82,13 +82,31 @@ class DBClient {
     return await this.update(uuid, UpdateExpression, ExpressionAttributeValues);
   }
 
-  public async updateRendered(uuid: string, mergeJob: String, audio_url: String) {
+  public async createMergeJob(uuid: string, article_id: String, url: string, language: string) {
+    const command = new PutCommand({
+      TableName: this.tableName,
+      Item: {
+        uuid,
+        article_id,
+        url,
+        type: 'merge',
+        language,
+        article_status: ArticleStatus.RENDERED,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    });
+
+    await docClient.send(command);
+
+    return url;
+  }
+
+  public async updateRendered(uuid: string, outputs: Record<string, { status: string, jobId: string, url: string}>) {
     let UpdateExpression =
-      'set article_status = :status, mergeId = :mergeId, audio_url = :audio_url, updatedAt = :updatedAt';
+      'set outputs = :outputs, updatedAt = :updatedAt';
     let ExpressionAttributeValues: { [k: string]: any } = {
-      ':status': ArticleStatus.RENDERED,
-      ':audio_url': audio_url,
-      ':mergeId': mergeJob,
+      ':outputs': outputs,
       ':updatedAt': new Date().toISOString(),
     };
 
