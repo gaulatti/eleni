@@ -53,13 +53,12 @@ class DBClient {
     return response.Item;
   }
 
-  public async create(uuid: string, url: string, title: string) {
+  public async create(uuid: string, url: string) {
     const command = new PutCommand({
       TableName: this.tableName,
       Item: {
         uuid,
         url,
-        title,
         article_status: ArticleStatus.PENDING,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -100,6 +99,17 @@ class DBClient {
     await docClient.send(command);
 
     return url;
+  }
+
+  public async updateTitle(uuid: string, title: string) {
+    let UpdateExpression =
+      'set title = :title, updatedAt = :updatedAt';
+    let ExpressionAttributeValues: { [k: string]: any } = {
+      ':title': title,
+      ':updatedAt': new Date().toISOString(),
+    };
+
+    return await this.update(uuid, UpdateExpression, ExpressionAttributeValues);
   }
 
   public async updateRendered(uuid: string, outputs: Record<string, { status: string, jobId: string, url: string}>) {

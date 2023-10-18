@@ -15,7 +15,7 @@ const buildGetLambda = (
     timeout: Duration.minutes(1),
   });
 
-  table.grantReadData(getLambda)
+  table.grantReadWriteData(getLambda)
 
   return getLambda;
 };

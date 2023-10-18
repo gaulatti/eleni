@@ -22,7 +22,7 @@ const buildTriggerLambda = (
   });
 
   stateMachine.grantStartExecution(triggerLambda);
-
+  table.grantReadWriteData(triggerLambda);
   triggerLambda.addEventSource(
     new DynamoEventSource(table, {
       batchSize: 1,

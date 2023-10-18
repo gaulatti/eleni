@@ -30,9 +30,9 @@ export class DebraStack extends Stack {
       restApiName: 'ArticlesToSpeech API',
     });
 
-    const listResource = api.root;
+    const rootResource = api.root;
     const listIntegration = new LambdaIntegration(listLambda);
-    listResource.addMethod('GET', listIntegration);
+    rootResource.addMethod('GET', listIntegration);
 
     const getResource = api.root.addResource('{articleId}');
     const getIntegration = new LambdaIntegration(getLambda);
@@ -42,7 +42,28 @@ export class DebraStack extends Stack {
       },
     });
 
-    const stateMachine = buildPollyWorkflow(this, bucket, mergeLambda, preTranslateLambda, prePollyLambda);
+    const postIntegration = new LambdaIntegration(getLambda, {
+      requestTemplates: {
+        'application/json': JSON.stringify({
+          articleId: "$input.params('articleId')",
+          url: "$input.params('url')",
+        }),
+      },
+    });
+    rootResource.addMethod('POST', postIntegration, {
+      requestParameters: {
+        'method.request.path.articleId': true,
+      },
+      apiKeyRequired: false,
+    });
+
+    const stateMachine = buildPollyWorkflow(
+      this,
+      bucket,
+      mergeLambda,
+      preTranslateLambda,
+      prePollyLambda
+    );
     const triggerLambda = buildTriggerLambda(this, articlesTable, stateMachine);
   }
 }

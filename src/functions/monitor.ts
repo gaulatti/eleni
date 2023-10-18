@@ -15,16 +15,14 @@ const main = async (event: any, _context: any, callback: any) => {
     const cardLiteElements = $('.card--lite');
     const scrapedData: {
       href: string;
-      title: string;
     }[] = [];
 
     cardLiteElements.each((index, element) => {
       const anchorElement = $(element).find('a');
 
       const href = anchorElement.attr('href') || '';
-      const title = anchorElement.text().trim() || '';
 
-      scrapedData.push({ href, title });
+      scrapedData.push({ href });
     });
 
     const existingRecords = (await db.list()) || [];
@@ -39,9 +37,9 @@ const main = async (event: any, _context: any, callback: any) => {
     /**
      * Create DB Record for unique scrapedData
      */
-    for (const { href, title } of uniqueScrapedData) {
+    for (const { href } of uniqueScrapedData) {
       const uuid = uuidv4();
-      await db.create(uuid, href, title);
+      await db.create(uuid, href);
       console.log(`Created record for ${href}`);
     }
 
