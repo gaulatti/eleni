@@ -16,7 +16,8 @@ const buildPollyWorkflow = (
   bucket: Bucket,
   mergeLambda: NodejsFunction,
   preTranslateLambda: NodejsFunction,
-  prePollyLambda: NodejsFunction
+  prePollyLambda: NodejsFunction,
+  mergeFilesLambda: NodejsFunction
 ) => {
   const stateMachineRole = new Role(stack, 'StateMachineRole', {
     assumedBy: new ServicePrincipal('states.amazonaws.com'),
@@ -242,16 +243,15 @@ const buildPollyWorkflow = (
       [`BakeS3${wave}`]: {
         Type: 'Wait',
         Seconds: 15,
-        Next: `MergeAudioFiles${wave}`,
+        Next: `MergeAudioFilesLambda${wave}`,
       },
-      [`MergeAudioFiles${wave}`]: {
+      [`MergeAudioFilesLambda${wave}`]: {
         Type: 'Task',
         End: true,
         Resource: 'arn:aws:states:::lambda:invoke',
-        OutputPath: '$.Payload',
         Parameters: {
           'Payload.$': '$',
-          FunctionName: mergeLambda.functionArn,
+          FunctionName: mergeFilesLambda.functionArn,
         },
         Retry: [
           {
@@ -266,7 +266,7 @@ const buildPollyWorkflow = (
             BackoffRate: 2,
           },
         ],
-      },
+      }
     },
   });
 
@@ -375,6 +375,7 @@ const buildPollyWorkflow = (
   mergeLambda.grantInvoke(stateMachine);
   preTranslateLambda.grantInvoke(stateMachine);
   prePollyLambda.grantInvoke(stateMachine);
+  mergeFilesLambda.grantInvoke(stateMachine);
   bucket.grantReadWrite(stateMachine);
 
   return stateMachine;

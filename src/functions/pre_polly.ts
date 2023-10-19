@@ -1,17 +1,4 @@
-const excapeSSMLCharacters = (text: string) => {
-  return text
-    .replace(/"/g, '&quot;')
-    .replace(/&/g, '&amp;')
-    .replace(/'/g, '&apos;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-};
-
-const delay = async (milliseconds = 1000) => {
-  return new Promise(resolve => {
-      setTimeout(resolve, milliseconds);
-  });
-}
+import { delay, excapeSSMLCharacters } from '../utils/lambdaUtils';
 
 const main = async (event: any, _context: any, callback: any) => {
   const { selectedVoice, language, text, title, byline } = event;

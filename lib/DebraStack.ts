@@ -12,12 +12,15 @@ import { buildTriggerLambda } from './functions/trigger';
 import { buildPollyWorkflow } from './workflows/polly';
 import { buildPreTranslateLambda } from './functions/pre_translate';
 import { buildPrePollyLambda } from './functions/pre_polly';
+import { buildMergeFilesLambda } from './functions/merge_files';
+import { buildTasksTable } from './database/tasks';
 export class DebraStack extends Stack {
   constructor(scope: Construct, uuid: string, props?: StackProps) {
     super(scope, uuid, props);
 
     const bucket = buildBucket(this);
     const articlesTable = buildArticlesTable(this);
+    const tasksTable = buildTasksTable(this);
     const monitorLambda = buildMonitorLambda(this, articlesTable);
     const mergeLambda = buildMergeLambda(this, bucket, articlesTable);
     const deliverLambda = buildDeliverLambda(this, articlesTable);
@@ -25,6 +28,7 @@ export class DebraStack extends Stack {
     const getLambda = buildGetLambda(this, articlesTable);
     const preTranslateLambda = buildPreTranslateLambda(this);
     const prePollyLambda = buildPrePollyLambda(this);
+    const mergeFilesLambda = buildMergeFilesLambda(this, articlesTable, tasksTable, bucket);
 
     const api = new RestApi(this, 'ArticlesToSpeechApi', {
       restApiName: 'ArticlesToSpeech API',
@@ -62,8 +66,10 @@ export class DebraStack extends Stack {
       bucket,
       mergeLambda,
       preTranslateLambda,
-      prePollyLambda
+      prePollyLambda,
+      mergeFilesLambda
     );
+
     const triggerLambda = buildTriggerLambda(this, articlesTable, stateMachine);
   }
 }

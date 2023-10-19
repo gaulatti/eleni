@@ -12,3 +12,7 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `cdk deploy`      deploy this stack to your default AWS account/region
 * `cdk diff`        compare deployed stack with current state
 * `cdk synth`       emits the synthesized CloudFormation template
+
+
+  Static build of FFmpeg/FFprobe for Amazon Linux 2
+  Check out https://github.com/serverlesspub/ffmpeg-aws-lambda-layer for more information.

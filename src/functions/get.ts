@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getDbInstance } from '../utils/dal';
+import { delay } from '../utils/lambdaUtils';
 
 const db = getDbInstance();
 
@@ -67,10 +68,40 @@ const main = async (event: any, _context: any, callback: any) => {
       await db.create(uuid, url);
       console.log(`Created record for ${url}`);
 
-      return {
-        statusCode: 201,
-        body: JSON.stringify({ uuid, url }),
-      };
+      if (process.env.LANGUAGES) {
+        const envLanguages = JSON.parse(process.env.LANGUAGES);
+        const languageCodes = envLanguages.map((item: any) => item.code);
+        let allItemsPresent = false;
+        let item;
+
+        while (!allItemsPresent) {
+          await delay(1000)
+          item = await db.get(uuid);
+
+          if (item) {
+            const outputs = item!.outputs || {};
+            const outputKeys = Object.keys(outputs) || [];
+            allItemsPresent = languageCodes.every((item: string) =>
+              outputKeys.includes(item)
+            );
+          } else {
+            return {
+              statusCode: 201,
+              body: JSON.stringify({ uuid, url }),
+            };
+          }
+        }
+
+        return {
+          statusCode: 200,
+          body: JSON.stringify(item),
+        };
+      } else {
+        return {
+          statusCode: 201,
+          body: JSON.stringify({ uuid, url }),
+        };
+      }
     }
 
     return {
