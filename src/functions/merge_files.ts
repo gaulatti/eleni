@@ -137,6 +137,7 @@ const main = async (event: any, _context: any, callback: any) => {
     throw error;
   }
   console.log('returning')
+  callback(null, event)
   return event;
 };
 

@@ -17,7 +17,8 @@ const buildPollyWorkflow = (
   mergeLambda: NodejsFunction,
   preTranslateLambda: NodejsFunction,
   prePollyLambda: NodejsFunction,
-  mergeFilesLambda: NodejsFunction
+  mergeFilesLambda: NodejsFunction,
+  createPollyLambda: NodejsFunction
 ) => {
   const stateMachineRole = new Role(stack, 'StateMachineRole', {
     assumedBy: new ServicePrincipal('states.amazonaws.com'),
@@ -185,7 +186,8 @@ const buildPollyWorkflow = (
           States: {
             [`SynthParagraphAudio${wave}`]: {
               Type: 'Task',
-              Next: `SynthParagraphTranscription${wave}`,
+              End: true,
+              // Next: `WaitForPolly${wave}`,
               Parameters: {
                 OutputS3BucketName: bucket.bucketName,
                 'Text.$': '$.text',
@@ -209,33 +211,55 @@ const buildPollyWorkflow = (
                 },
               ],
             },
-            [`SynthParagraphTranscription${wave}`]: {
-              Type: 'Task',
-              End: true,
-              Parameters: {
-                OutputS3BucketName: bucket.bucketName,
-                'Text.$': '$.text',
-                TextType: 'ssml',
-                Engine: 'neural',
-                OutputFormat: 'json',
-                OutputS3KeyPrefix: 'transcription/',
-                SpeechMarkTypes: ['sentence'],
-                'LanguageCode.$': '$.language',
-                'VoiceId.$': '$.selectedVoice.name',
-              },
-              ResultPath: '$.transcriptionOutput',
-              Resource:
-                'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
-              Retry: [
-                {
-                  ErrorEquals: ['States.ALL'],
-                  BackoffRate: 2,
-                  IntervalSeconds: 2,
-                  MaxAttempts: 3,
-                  Comment: 'RetryPolly',
-                },
-              ],
-            },
+            // [`WaitForPolly${wave}`]: {
+            //   Type: 'Task',
+            //   End: true,
+            //   Resource: 'arn:aws:states:::lambda:invoke',
+            //   Parameters: {
+            //     'Payload.$': '$',
+            //     FunctionName: createPollyLambda.functionArn,
+            //   },
+            //   Retry: [
+            //     {
+            //       ErrorEquals: [
+            //         'Lambda.ServiceException',
+            //         'Lambda.AWSLambdaException',
+            //         'Lambda.SdkClientException',
+            //         'Lambda.TooManyRequestsException',
+            //       ],
+            //       IntervalSeconds: 1,
+            //       MaxAttempts: 3,
+            //       BackoffRate: 2,
+            //     },
+            //   ],
+            // }
+            // [`SynthParagraphTranscription${wave}`]: {
+            //   Type: 'Task',
+            //   End: true,
+            //   Parameters: {
+            //     OutputS3BucketName: bucket.bucketName,
+            //     'Text.$': '$.text',
+            //     TextType: 'ssml',
+            //     Engine: 'neural',
+            //     OutputFormat: 'json',
+            //     OutputS3KeyPrefix: 'transcription/',
+            //     SpeechMarkTypes: ['sentence'],
+            //     'LanguageCode.$': '$.language',
+            //     'VoiceId.$': '$.selectedVoice.name',
+            //   },
+            //   ResultPath: '$.transcriptionOutput',
+            //   Resource:
+            //     'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
+            //   Retry: [
+            //     {
+            //       ErrorEquals: ['States.ALL'],
+            //       BackoffRate: 2,
+            //       IntervalSeconds: 2,
+            //       MaxAttempts: 3,
+            //       Comment: 'RetryPolly',
+            //     },
+            //   ],
+            // },
           },
         },
         ResultPath: '$.paragraphsOutput',
@@ -266,7 +290,7 @@ const buildPollyWorkflow = (
             BackoffRate: 2,
           },
         ],
-      }
+      },
     },
   });
 
@@ -376,6 +400,7 @@ const buildPollyWorkflow = (
   preTranslateLambda.grantInvoke(stateMachine);
   prePollyLambda.grantInvoke(stateMachine);
   mergeFilesLambda.grantInvoke(stateMachine);
+  createPollyLambda.grantInvoke(stateMachine);
   bucket.grantReadWrite(stateMachine);
 
   return stateMachine;
