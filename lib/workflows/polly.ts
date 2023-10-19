@@ -178,7 +178,7 @@ const buildPollyWorkflow = (
       },
       [`SynthParagraphs${wave}`]: {
         Type: 'Map',
-        Next: `BakeS3${wave}`,
+        Next: `MergeAudioFilesLambda${wave}`,
         InputPath: '$.textInput',
         MaxConcurrency: 5,
         Iterator: {
@@ -264,11 +264,6 @@ const buildPollyWorkflow = (
         },
         ResultPath: '$.paragraphsOutput',
       },
-      [`BakeS3${wave}`]: {
-        Type: 'Wait',
-        Seconds: 15,
-        Next: `MergeAudioFilesLambda${wave}`,
-      },
       [`MergeAudioFilesLambda${wave}`]: {
         Type: 'Task',
         End: true,
@@ -280,14 +275,10 @@ const buildPollyWorkflow = (
         Retry: [
           {
             ErrorEquals: [
-              'Lambda.ServiceException',
-              'Lambda.AWSLambdaException',
-              'Lambda.SdkClientException',
-              'Lambda.TooManyRequestsException',
+              'States.ALL',
             ],
             IntervalSeconds: 1,
-            MaxAttempts: 3,
-            BackoffRate: 2,
+            MaxAttempts: 20,
           },
         ],
       },
