@@ -23,24 +23,23 @@ export class DebraStack extends Stack {
     const bucket = buildBucket(this);
     const articlesTable = buildArticlesTable(this);
     const tasksTable = buildTasksTable(this);
-    const monitorLambda = buildMonitorLambda(this, articlesTable);
+    // const monitorLambda = buildMonitorLambda(this, articlesTable);
     const mergeLambda = buildMergeLambda(this, bucket, articlesTable);
-    const deliverLambda = buildDeliverLambda(this, articlesTable);
-    const listLambda = buildListLambda(this, articlesTable);
+    // const deliverLambda = buildDeliverLambda(this, articlesTable);
+    // const listLambda = buildListLambda(this, articlesTable);
     const getLambda = buildGetLambda(this, articlesTable);
     const preTranslateLambda = buildPreTranslateLambda(this);
     const prePollyLambda = buildPrePollyLambda(this);
-    const mergeFilesLambda = buildMergeFilesLambda(this, articlesTable, tasksTable, bucket);
-    const createPollyLambda = buildTaskCreateLambda(this, tasksTable);
-    const updatePollyLambda = buildTaskUpdateLambda(this, tasksTable);
+    // const createPollyLambda = buildTaskCreateLambda(this, tasksTable);
+    // const updatePollyLambda = buildTaskUpdateLambda(this, tasksTable);
 
     const api = new RestApi(this, 'ArticlesToSpeechApi', {
       restApiName: 'ArticlesToSpeech API',
     });
 
     const rootResource = api.root;
-    const listIntegration = new LambdaIntegration(listLambda);
-    rootResource.addMethod('GET', listIntegration);
+    // const listIntegration = new LambdaIntegration(listLambda);
+    // rootResource.addMethod('GET', listIntegration);
 
     const getResource = api.root.addResource('{articleId}');
     const getIntegration = new LambdaIntegration(getLambda);
@@ -64,15 +63,16 @@ export class DebraStack extends Stack {
       },
       apiKeyRequired: false,
     });
+    const mergeFilesLambda = buildMergeFilesLambda(this, articlesTable, tasksTable, bucket);
 
     const stateMachine = buildPollyWorkflow(
       this,
       bucket,
-      mergeLambda,
+      // mergeLambda,
       preTranslateLambda,
       prePollyLambda,
       mergeFilesLambda,
-      createPollyLambda
+      // createPollyLambda
     );
 
     const triggerLambda = buildTriggerLambda(this, articlesTable, stateMachine);

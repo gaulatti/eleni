@@ -66,7 +66,7 @@ const main = async (event: any, _context: any, callback: any) => {
       const uuid = uuidv4();
 
       await db.create(uuid, url);
-      console.log(`Created record for ${url}`);
+      console.log(`Created record for ${url}`, { uuid });
 
       if (process.env.LANGUAGES) {
         const envLanguages = JSON.parse(process.env.LANGUAGES);

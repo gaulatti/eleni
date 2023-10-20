@@ -1,8 +1,11 @@
 import { Duration, Stack } from 'aws-cdk-lib';
 import { Table } from 'aws-cdk-lib/aws-dynamodb';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
+import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
+import { merge } from 'cheerio/lib/static';
 const buildMergeFilesLambda = (
   stack: Stack,
   articlesTable: Table,
@@ -18,8 +21,15 @@ const buildMergeFilesLambda = (
     handler: 'main',
     layers: [ffmpegLayer],
     runtime: Runtime.NODEJS_LATEST,
-    timeout: Duration.seconds(30),
+    timeout: Duration.seconds(10),
   });
+  const policyStatement = new PolicyStatement({
+    actions: ['states:SendTaskSuccess', 'states:SendTaskFailure'],
+    resources: ['*'], // Replace with the ARN of your specific state machine if needed
+  });
+
+  // Add the policy statement to the Lambda function's execution role
+  getLambda.addToRolePolicy(policyStatement);
 
   articlesTable.grantReadWriteData(getLambda)
   tasksTable.grantReadWriteData(getLambda)

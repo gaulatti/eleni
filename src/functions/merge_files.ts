@@ -9,8 +9,10 @@ import { Readable } from 'stream';
 import { ArticleStatus, getDbInstance } from '../utils/dal';
 import fs = require('fs');
 import os = require('os');
+import { SFNClient, SendTaskFailureCommand, SendTaskSuccessCommand } from '@aws-sdk/client-sfn';
 const db = getDbInstance();
 const client = new S3Client();
+const stepFunctionsClient = new SFNClient();
 
 function streamToFile(stream: Readable, filename: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -49,11 +51,15 @@ async function uploadFileToS3(bucket: string, key: string, filePath: string) {
 }
 
 const main = async (event: any, _context: any, callback: any) => {
+  console.log({ event });
   const {
-    titleOutput: { SynthesisTask: titleTask },
-    paragraphsOutput,
-    uuid,
-    language,
+    input: {
+      titleOutput: { SynthesisTask: titleTask },
+      paragraphsOutput,
+      uuid,
+      language,
+    },
+    TaskToken,
   } = event;
   try {
     const bucketName = 'debrastack-articlestospeechbucket802d2e55-507ica0b9b8p';
@@ -114,13 +120,20 @@ const main = async (event: any, _context: any, callback: any) => {
       console.log('file successfully saved');
     }
 
+    console.log('preFileList')
     const fileListPath = '/tmp/filelist.txt';
     const fileContent = localUrls.map((path) => `file '${path}'`).join('\n');
-
+    console.log('fileContent', { fileContent, fileListPath})
+    
     fs.writeFileSync(fileListPath, fileContent);
-
+    
+    console.log('writeFileSync done')
+    console.log('writeFileSync done')
     const command = `ffmpeg -f concat -safe 0 -i ${fileListPath} -c copy ${tmpOutputFile}`;
-    await exec(command);
+    const { stdout, stderr } = await exec(command);
+
+    console.log('ffmpeg done', { stdout, stderr });
+    
 
     await uploadFileToS3(bucketName, outputFile, tmpOutputFile);
     const article = await db.get(uuid);
@@ -129,15 +142,27 @@ const main = async (event: any, _context: any, callback: any) => {
     outputs[language] = {
       url: `https://debrastack-articlestospeechbucket802d2e55-507ica0b9b8p.s3.amazonaws.com/full/${uuid}-${language}.mp3`,
     };
-    console.log('predb update')
+    console.log('predb update');
     await db.updateRendered(uuid, outputs);
-    console.log('postdb update')
+    console.log('postdb update');
   } catch (error) {
     await db.updateStatus(uuid, ArticleStatus.FAILED);
+    await stepFunctionsClient.send(
+      new SendTaskFailureCommand({
+        taskToken: TaskToken,
+      })
+    );
     throw error;
   }
-  console.log('returning')
-  callback(null, event)
+
+  await stepFunctionsClient.send(
+    new SendTaskSuccessCommand({
+      taskToken: TaskToken, // Replace with the actual task token
+      output: JSON.stringify({ key: 'value' }), // Replace with your output data
+    })
+  );
+  console.log('sfn returned');
+  callback(null, event);
   return event;
 };
 

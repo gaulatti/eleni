@@ -14,11 +14,11 @@ import { languages } from '../languages';
 const buildPollyWorkflow = (
   stack: Stack,
   bucket: Bucket,
-  mergeLambda: NodejsFunction,
+  // mergeLambda: NodejsFunction,
   preTranslateLambda: NodejsFunction,
   prePollyLambda: NodejsFunction,
   mergeFilesLambda: NodejsFunction,
-  createPollyLambda: NodejsFunction
+  // createPollyLambda: NodejsFunction
 ) => {
   const stateMachineRole = new Role(stack, 'StateMachineRole', {
     assumedBy: new ServicePrincipal('states.amazonaws.com'),
@@ -267,16 +267,17 @@ const buildPollyWorkflow = (
       [`MergeAudioFilesLambda${wave}`]: {
         Type: 'Task',
         End: true,
-        Resource: 'arn:aws:states:::lambda:invoke',
+        Resource: 'arn:aws:states:::lambda:invoke.waitForTaskToken',
         Parameters: {
-          'Payload.$': '$',
+          'Payload': {
+            'input.$': '$',
+            'TaskToken.$': '$$.Task.Token', // Include TaskToken in the Payload
+          },
           FunctionName: mergeFilesLambda.functionArn,
         },
         Retry: [
           {
-            ErrorEquals: [
-              'States.ALL',
-            ],
+            ErrorEquals: ['States.ALL'],
             IntervalSeconds: 1,
             MaxAttempts: 20,
           },
@@ -387,11 +388,11 @@ const buildPollyWorkflow = (
     })
   );
 
-  mergeLambda.grantInvoke(stateMachine);
+  // mergeLambda.grantInvoke(stateMachine);
   preTranslateLambda.grantInvoke(stateMachine);
   prePollyLambda.grantInvoke(stateMachine);
   mergeFilesLambda.grantInvoke(stateMachine);
-  createPollyLambda.grantInvoke(stateMachine);
+  // createPollyLambda.grantInvoke(stateMachine);
   bucket.grantReadWrite(stateMachine);
 
   return stateMachine;
