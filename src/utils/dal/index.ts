@@ -176,7 +176,7 @@ class DBClient {
     });
 
     const response = await docClient.send(command);
-    return response.Items ? unmarshall(response.Items[0]) : null;
+    return response.Items?.[0] ? unmarshall(response.Items[0]) : null;
   }
 }
 
