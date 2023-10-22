@@ -54,6 +54,7 @@ export class DebraStack extends Stack {
         }),
       },
     });
+
     rootResource.addMethod('POST', postIntegration, {
       requestParameters: {
         'method.request.path.articleId': true,
