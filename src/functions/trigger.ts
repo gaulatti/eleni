@@ -34,7 +34,7 @@ const main = async (event: any, _context: any, _callback: any) => {
           const input = {
             stateMachineArn: process.env.STATE_MACHINE_ARN,
             name: `${uuid}-${language.code}`,
-            input: JSON.stringify({ uuid, url, title, text, byline }),
+            input: JSON.stringify({ uuid, url, title, text, byline, language }),
           };
           const command = new StartExecutionCommand(input);
           const execution = await client.send(command);
@@ -42,6 +42,7 @@ const main = async (event: any, _context: any, _callback: any) => {
             title,
             language,
             execution,
+            command
           });
         }
       } catch (error) {

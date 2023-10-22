@@ -30,12 +30,7 @@ const buildPollyWorkflow = (
         Resource: 'arn:aws:states:::lambda:invoke',
         Parameters: {
           FunctionName: preTranslateLambda.functionArn,
-          Payload: {
-            'title.$': '$$.Execution.Input.title',
-            'text.$': '$$.Execution.Input.text',
-            'byline.$': '$$.Execution.Input.byline',
-            'language.$': '$',
-          },
+          'Payload.$': '$',
         },
         Next: `AvoidTranslateEN`,
         ResultSelector: {
