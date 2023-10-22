@@ -1,4 +1,5 @@
 import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
+import { unmarshall } from "@aws-sdk/util-dynamodb";
 import {
   DynamoDBDocumentClient,
   ScanCommand,
@@ -162,15 +163,18 @@ class DBClient {
     if (!url) return null;
     const command = new QueryCommand({
       TableName: this.tableName,
-      IndexName: 'UrlIndex', // The name you gave to your GSI
-      KeyConditionExpression: 'url = :urlVal',
+      IndexName: 'UrlIndex',
+      KeyConditionExpression: '#urlAttribute = :urlVal',
+      ExpressionAttributeNames: {
+        '#urlAttribute': 'url'
+      },
       ExpressionAttributeValues: {
         ':urlVal': { S: url },
       },
     });
 
     const response = await docClient.send(command);
-    return response.Items ? response.Items[0] : null;
+    return response.Items ? unmarshall(response.Items[0]) : null;
   }
 }
 
