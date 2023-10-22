@@ -14,32 +14,37 @@ const main = async (event: any, _context: any, _callback: any) => {
   try {
     const { articleId, href, language } = sanitizeGetInputs(event);
     if (!articleId && !href) throw new Error('Missing articleId or url');
-    let existingItem, url;
+    let existingItem, url, uuid;
 
     if (articleId) {
       existingItem = await db.get(articleId);
+    }
+
+    if(href) {
+      url = extractPathWithTrailingSlash(href);
     }
 
     /**
      * If existingItem can't be found by UUID, try to find it by URL
      */
     if (!existingItem) {
-      const url = extractPathWithTrailingSlash(href);
       existingItem = await db.queryByUrl(url);
     }
 
     /**
      * If there's no existing item, create a new one
      */
-    const uuid = articleId || uuidv4();
     if (!existingItem) {
       /**
        * If there's no URL, return 404. We need the URL to crawl the page
        */
       if (!url) return lambdaHttpOutput(404);
-      await db.create(uuid, url);
+      const createResponse = await db.create(uuidv4(), url);
+      uuid = createResponse.uuid;
       console.log(`Created record for ${url}`);
       existingItem = await db.get(uuid);
+    } else {
+      uuid = existingItem.uuid;
     }
 
     /**

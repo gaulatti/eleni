@@ -1,5 +1,5 @@
 import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
-import { unmarshall } from "@aws-sdk/util-dynamodb";
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 import {
   DynamoDBDocumentClient,
   ScanCommand,
@@ -42,7 +42,9 @@ class DBClient {
     return response.Items;
   }
 
-  public async get(uuid: string) {
+  public async get(uuid: string | null | undefined) {
+    if (!uuid) return null;
+
     const command = new GetCommand({
       TableName: this.tableName,
       Key: {
@@ -68,7 +70,7 @@ class DBClient {
 
     await docClient.send(command);
 
-    return url;
+    return { uuid };
   }
 
   public async updateStatus(uuid: string, status: ArticleStatus) {
@@ -159,14 +161,14 @@ class DBClient {
     return docClient.send(command);
   }
 
-  public async queryByUrl(url: string | null) {
+  public async queryByUrl(url: string | null | undefined) {
     if (!url) return null;
     const command = new QueryCommand({
       TableName: this.tableName,
       IndexName: 'UrlIndex',
       KeyConditionExpression: '#urlAttribute = :urlVal',
       ExpressionAttributeNames: {
-        '#urlAttribute': 'url'
+        '#urlAttribute': 'url',
       },
       ExpressionAttributeValues: {
         ':urlVal': { S: url },
