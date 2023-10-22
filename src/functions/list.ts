@@ -1,6 +1,6 @@
-import { getDbInstance } from '../utils/dal';
+import { getArticlesTableInstance } from '../utils/dal';
 
-const db = getDbInstance();
+const db = getArticlesTableInstance();
 
 const main = async (_event: any, _context: any, callback: any) => {
   const list = await db.list();

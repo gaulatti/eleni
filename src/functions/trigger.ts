@@ -1,7 +1,7 @@
 import { SFNClient, StartExecutionCommand } from '@aws-sdk/client-sfn';
 import axios from 'axios';
 import { load } from 'cheerio';
-import { getDbInstance } from '../utils/dal';
+import { getArticlesTableInstance } from '../utils/dal';
 
 const excapeSSMLCharacters = (text: string) => {
   return text
@@ -11,7 +11,7 @@ const excapeSSMLCharacters = (text: string) => {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 };
-const db = getDbInstance();
+const db = getArticlesTableInstance();
 const client = new SFNClient();
 const main = async (event: any, _context: any, callback: any) => {
   for (const record of event.Records) {

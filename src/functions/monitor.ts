@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { load } from 'cheerio';
-import { getDbInstance } from '../utils/dal';
+import { getArticlesTableInstance } from '../utils/dal';
 
-const db = getDbInstance();
+const db = getArticlesTableInstance();
 import { v4 as uuidv4 } from 'uuid';
 
 const main = async (event: any, _context: any, callback: any) => {

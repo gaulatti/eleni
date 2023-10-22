@@ -1,6 +1,6 @@
-import { ArticleStatus, getDbInstance } from '../utils/dal';
+import { ArticleStatus, getArticlesTableInstance } from '../utils/dal';
 
-const db = getDbInstance();
+const db = getArticlesTableInstance();
 
 const main = async (event: any, _context: any, callback: any) => {
   const {

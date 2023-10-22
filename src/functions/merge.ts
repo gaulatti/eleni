@@ -7,14 +7,13 @@ import {
   Mp3RateControlMode,
   OutputGroupType,
 } from '@aws-sdk/client-mediaconvert';
-import { getDbInstance } from '../utils/dal';
-import { languageMappings } from '../utils/languageMappings';
+import { getArticlesTableInstance } from '../utils/dal';
 
 const client = new MediaConvertClient({
   endpoint: 'https://q25wbt2lc.mediaconvert.us-east-1.amazonaws.com',
 });
 
-const db = getDbInstance();
+const db = getArticlesTableInstance();
 
 const main = async (event: any, _context: any, callback: any) => {
   const {

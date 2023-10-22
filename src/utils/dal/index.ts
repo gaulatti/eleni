@@ -1,4 +1,4 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
 import {
   DynamoDBDocumentClient,
   ScanCommand,
@@ -81,7 +81,12 @@ class DBClient {
     return await this.update(uuid, UpdateExpression, ExpressionAttributeValues);
   }
 
-  public async createMergeJob(uuid: string, article_id: String, url: string, language: string) {
+  public async createMergeJob(
+    uuid: string,
+    article_id: String,
+    url: string,
+    language: string
+  ) {
     const command = new PutCommand({
       TableName: this.tableName,
       Item: {
@@ -102,8 +107,7 @@ class DBClient {
   }
 
   public async updateTitle(uuid: string, title: string) {
-    let UpdateExpression =
-      'set title = :title, updatedAt = :updatedAt';
+    let UpdateExpression = 'set title = :title, updatedAt = :updatedAt';
     let ExpressionAttributeValues: { [k: string]: any } = {
       ':title': title,
       ':updatedAt': new Date().toISOString(),
@@ -112,9 +116,11 @@ class DBClient {
     return await this.update(uuid, UpdateExpression, ExpressionAttributeValues);
   }
 
-  public async updateRendered(uuid: string, outputs: Record<string, { status: string, jobId: string, url: string}>) {
-    let UpdateExpression =
-      'set outputs = :outputs, updatedAt = :updatedAt';
+  public async updateRendered(
+    uuid: string,
+    outputs: Record<string, { status: string; jobId: string; url: string }>
+  ) {
+    let UpdateExpression = 'set outputs = :outputs, updatedAt = :updatedAt';
     let ExpressionAttributeValues: { [k: string]: any } = {
       ':outputs': outputs,
       ':updatedAt': new Date().toISOString(),
@@ -123,7 +129,11 @@ class DBClient {
     return await this.update(uuid, UpdateExpression, ExpressionAttributeValues);
   }
 
-  private async update(uuid: string, UpdateExpression: string, ExpressionAttributeValues?: Record<string, any>) {
+  private async update(
+    uuid: string,
+    UpdateExpression: string,
+    ExpressionAttributeValues?: Record<string, any>
+  ) {
     const command = new UpdateCommand({
       TableName: this.tableName,
       Key: {
@@ -147,9 +157,24 @@ class DBClient {
 
     return docClient.send(command);
   }
+
+  public async queryByUrl(url: string | null) {
+    if (!url) return null;
+    const command = new QueryCommand({
+      TableName: this.tableName,
+      IndexName: 'UrlIndex', // The name you gave to your GSI
+      KeyConditionExpression: 'url = :urlVal',
+      ExpressionAttributeValues: {
+        ':urlVal': { S: url },
+      },
+    });
+
+    const response = await docClient.send(command);
+    return response.Items ? response.Items[0] : null;
+  }
 }
 
-const getDbInstance = () => {
+const getArticlesTableInstance = () => {
   if (!dbInstance) {
     dbInstance = new DBClient();
   }
@@ -157,4 +182,4 @@ const getDbInstance = () => {
   return dbInstance;
 };
 
-export { ArticleStatus, getDbInstance };
+export { ArticleStatus, getArticlesTableInstance };

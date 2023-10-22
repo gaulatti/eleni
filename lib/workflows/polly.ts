@@ -10,24 +10,22 @@ import {
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { DefinitionBody, StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
-import { languages } from '../languages';
 const buildPollyWorkflow = (
   stack: Stack,
   bucket: Bucket,
   mergeLambda: NodejsFunction,
   preTranslateLambda: NodejsFunction,
   prePollyLambda: NodejsFunction,
-  mergeFilesLambda: NodejsFunction,
-  createPollyLambda: NodejsFunction
+  mergeFilesLambda: NodejsFunction
 ) => {
   const stateMachineRole = new Role(stack, 'StateMachineRole', {
     assumedBy: new ServicePrincipal('states.amazonaws.com'),
   });
 
-  const waveTemplate = (wave: number) => ({
-    StartAt: `PreTranslate${wave}`,
+  const languagesStateTemplate = {
+    StartAt: `PreTranslate`,
     States: {
-      [`PreTranslate${wave}`]: {
+      PreTranslate: {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
         Parameters: {
@@ -39,7 +37,7 @@ const buildPollyWorkflow = (
             'language.$': '$',
           },
         },
-        Next: `AvoidTranslateEN${wave}`,
+        Next: `AvoidTranslateEN`,
         ResultSelector: {
           'title.$': '$.Payload.title',
           'language.$': '$.Payload.language',
@@ -50,7 +48,7 @@ const buildPollyWorkflow = (
         },
         ResultPath: '$',
       },
-      [`AvoidTranslateEN${wave}`]: {
+      AvoidTranslateEN: {
         Type: 'Choice',
         Choices: [
           {
@@ -58,14 +56,14 @@ const buildPollyWorkflow = (
               Variable: '$.translate',
               StringEquals: 'en',
             },
-            Next: `TranslateTitle${wave}`,
+            Next: `TranslateTitle`,
           },
         ],
-        Default: `PrePollyNotTranslated${wave}`,
+        Default: `PrePollyNotTranslated`,
       },
-      [`TranslateTitle${wave}`]: {
+      TranslateTitle: {
         Type: 'Task',
-        Next: `TranslateByline${wave}`,
+        Next: `TranslateByline`,
         Parameters: {
           SourceLanguageCode: 'en-US',
           'TargetLanguageCode.$': '$.translate',
@@ -77,9 +75,9 @@ const buildPollyWorkflow = (
           'text.$': '$.TranslatedText',
         },
       },
-      [`TranslateByline${wave}`]: {
+      TranslateByline: {
         Type: 'Task',
-        Next: `TranslateContent${wave}`,
+        Next: `TranslateContent`,
         Parameters: {
           SourceLanguageCode: 'en-US',
           'TargetLanguageCode.$': '$.translate',
@@ -91,9 +89,9 @@ const buildPollyWorkflow = (
         },
         ResultPath: '$.translation.byline',
       },
-      [`TranslateContent${wave}`]: {
+      TranslateContent: {
         Type: 'Task',
-        Next: `PrePollyTranslated${wave}`,
+        Next: `PrePollyTranslated`,
         Parameters: {
           SourceLanguageCode: 'en-US',
           'TargetLanguageCode.$': '$.translate',
@@ -105,7 +103,7 @@ const buildPollyWorkflow = (
           'text.$': '$.TranslatedText',
         },
       },
-      [`PrePollyNotTranslated${wave}`]: {
+      PrePollyNotTranslated: {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
         Parameters: {
@@ -118,7 +116,7 @@ const buildPollyWorkflow = (
             'language.$': '$.language',
           },
         },
-        Next: `SynthTitle${wave}`,
+        Next: `SynthTitle`,
         ResultSelector: {
           'uuid.$': '$$.Execution.Input.uuid',
           'title.$': '$.Payload.title',
@@ -128,7 +126,7 @@ const buildPollyWorkflow = (
         },
         ResultPath: '$',
       },
-      [`PrePollyTranslated${wave}`]: {
+      PrePollyTranslated: {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
         Parameters: {
@@ -141,7 +139,7 @@ const buildPollyWorkflow = (
             'language.$': '$.language',
           },
         },
-        Next: `SynthTitle${wave}`,
+        Next: `SynthTitle`,
         ResultSelector: {
           'uuid.$': '$$.Execution.Input.uuid',
           'title.$': '$.Payload.title',
@@ -151,9 +149,9 @@ const buildPollyWorkflow = (
         },
         ResultPath: '$',
       },
-      [`SynthTitle${wave}`]: {
+      SynthTitle: {
         Type: 'Task',
-        Next: `SynthParagraphs${wave}`,
+        Next: `SynthParagraphs`,
         Parameters: {
           OutputS3BucketName: bucket.bucketName,
           'Text.$': '$.title',
@@ -176,18 +174,18 @@ const buildPollyWorkflow = (
         Resource: 'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
         ResultPath: '$.titleOutput',
       },
-      [`SynthParagraphs${wave}`]: {
+      SynthParagraphs: {
         Type: 'Map',
-        Next: `MergeAudioFilesLambda${wave}`,
+        Next: `MergeAudioFilesLambda`,
         InputPath: '$.textInput',
         MaxConcurrency: 5,
         Iterator: {
-          StartAt: `SynthParagraphAudio${wave}`,
+          StartAt: `SynthParagraphAudio`,
           States: {
-            [`SynthParagraphAudio${wave}`]: {
+            SynthParagraphAudio: {
               Type: 'Task',
               End: true,
-              // Next: `WaitForPolly${wave}`,
+              // Next: `WaitForPolly`,
               Parameters: {
                 OutputS3BucketName: bucket.bucketName,
                 'Text.$': '$.text',
@@ -211,7 +209,7 @@ const buildPollyWorkflow = (
                 },
               ],
             },
-            // [`WaitForPolly${wave}`]: {
+            // WaitForPolly: {
             //   Type: 'Task',
             //   End: true,
             //   Resource: 'arn:aws:states:::lambda:invoke',
@@ -233,7 +231,7 @@ const buildPollyWorkflow = (
             //     },
             //   ],
             // }
-            // [`SynthParagraphTranscription${wave}`]: {
+            // SynthParagraphTranscription: {
             //   Type: 'Task',
             //   End: true,
             //   Parameters: {
@@ -264,7 +262,7 @@ const buildPollyWorkflow = (
         },
         ResultPath: '$.paragraphsOutput',
       },
-      [`MergeAudioFilesLambda${wave}`]: {
+      MergeAudioFilesLambda: {
         Type: 'Task',
         End: true,
         Resource: 'arn:aws:states:::lambda:invoke',
@@ -274,98 +272,12 @@ const buildPollyWorkflow = (
         },
         Retry: [
           {
-            ErrorEquals: [
-              'States.ALL',
-            ],
+            ErrorEquals: ['States.ALL'],
             IntervalSeconds: 1,
             MaxAttempts: 20,
           },
         ],
       },
-    },
-  });
-
-  const languagesStateTemplate = {
-    StartAt: 'Reset-Wave1',
-    States: {
-      'Reset-Wave1': {
-        Type: 'Pass',
-        Next: 'Languages-Wave1',
-        Result: { languages: languages.wave1 },
-        ResultPath: '$',
-        Parameters: {},
-      },
-      'Languages-Wave1': {
-        Type: 'Map',
-        ItemsPath: '$.languages',
-        Iterator: waveTemplate(1),
-        End: true,
-      },
-      // 'Reset-Wave2': {
-      //   Type: 'Pass',
-      //   Next: 'Languages-Wave2',
-      //   Result: { languages: languages.wave2 },
-      //   ResultPath: '$',
-      //   Parameters: {},
-      // },
-      // 'Languages-Wave2': {
-      //   Type: 'Map',
-      //   ItemsPath: '$.languages',
-      //   Iterator: waveTemplate(2),
-      //   Next: 'Reset-Wave3',
-      // },
-      // 'Reset-Wave3': {
-      //   Type: 'Pass',
-      //   Next: 'Languages-Wave3',
-      //   Result: { languages: languages.wave3 },
-      //   ResultPath: '$',
-      //   Parameters: {},
-      // },
-      // 'Languages-Wave3': {
-      //   Type: 'Map',
-      //   ItemsPath: '$.languages',
-      //   Iterator: waveTemplate(3),
-      //   Next: 'Reset-Wave4',
-      // },
-      // 'Reset-Wave4': {
-      //   Type: 'Pass',
-      //   Next: 'Languages-Wave4',
-      //   Result: { languages: languages.wave4 },
-      //   ResultPath: '$',
-      //   Parameters: {},
-      // },
-      // 'Languages-Wave4': {
-      //   Type: 'Map',
-      //   ItemsPath: '$.languages',
-      //   Iterator: waveTemplate(4),
-      //   Next: 'Reset-Wave5',
-      // },
-      // 'Reset-Wave5': {
-      //   Type: 'Pass',
-      //   Next: 'Languages-Wave5',
-      //   Result: { languages: languages.wave5 },
-      //   ResultPath: '$',
-      //   Parameters: {},
-      // },
-      // 'Languages-Wave5': {
-      //   Type: 'Map',
-      //   ItemsPath: '$.languages',
-      //   Iterator: waveTemplate(5),
-      //   Next: 'Reset-Wave6',
-      // },
-      // 'Reset-Wave6': {
-      //   Type: 'Pass',
-      //   Next: 'Languages-Wave6',
-      //   Result: { languages: languages.wave6 },
-      //   ResultPath: '$',
-      //   Parameters: {},
-      // },
-      // 'Languages-Wave6': {
-      //   Type: 'Map',
-      //   ItemsPath: '$.languages',
-      //   Iterator: waveTemplate(6),
-      //   End: true,
-      // },
     },
   };
 
@@ -391,7 +303,6 @@ const buildPollyWorkflow = (
   preTranslateLambda.grantInvoke(stateMachine);
   prePollyLambda.grantInvoke(stateMachine);
   mergeFilesLambda.grantInvoke(stateMachine);
-  createPollyLambda.grantInvoke(stateMachine);
   bucket.grantReadWrite(stateMachine);
 
   return stateMachine;

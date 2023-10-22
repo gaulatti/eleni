@@ -1,4 +1,4 @@
-import { delay, excapeSSMLCharacters } from '../utils/lambdaUtils';
+import { delay, excapeSSMLCharacters } from '../utils';
 
 const main = async (event: any, _context: any, callback: any) => {
   const { selectedVoice, language, text, title, byline } = event;

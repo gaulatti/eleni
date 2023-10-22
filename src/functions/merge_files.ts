@@ -6,10 +6,10 @@ import {
 } from '@aws-sdk/client-s3';
 import { exec as originalExec } from 'child_process';
 import { Readable } from 'stream';
-import { ArticleStatus, getDbInstance } from '../utils/dal';
+import { ArticleStatus, getArticlesTableInstance } from '../utils/dal';
 import fs = require('fs');
 import os = require('os');
-const db = getDbInstance();
+const db = getArticlesTableInstance();
 const client = new S3Client();
 
 function streamToFile(stream: Readable, filename: string): Promise<void> {

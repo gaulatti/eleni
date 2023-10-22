@@ -1,9 +1,7 @@
 import { Duration, Stack } from 'aws-cdk-lib';
 import { Table } from 'aws-cdk-lib/aws-dynamodb';
-import { Runtime, StartingPosition } from 'aws-cdk-lib/aws-lambda';
-import { DynamoEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 
 const buildListLambda = (
   stack: Stack,

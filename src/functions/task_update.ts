@@ -1,5 +1,5 @@
 import { TaskStatus, getDbInstance } from '../utils/dal/tasks';
-import { delay } from '../utils/lambdaUtils';
+import { delay } from '../utils';
 const db = getDbInstance();
 
 const main = async (event: any, _context: any, callback: any) => {
