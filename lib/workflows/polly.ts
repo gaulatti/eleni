@@ -111,7 +111,7 @@ const buildPollyWorkflow = (
             'language.$': '$.language',
           },
         },
-        Next: `SynthTitle`,
+        Next: `ParallelAudioGeneration`,
         ResultSelector: {
           'uuid.$': '$$.Execution.Input.uuid',
           'title.$': '$.Payload.title',
@@ -134,7 +134,7 @@ const buildPollyWorkflow = (
             'language.$': '$.language',
           },
         },
-        Next: `SynthTitle`,
+        Next: `ParallelAudioGeneration`,
         ResultSelector: {
           'uuid.$': '$$.Execution.Input.uuid',
           'title.$': '$.Payload.title',
@@ -144,118 +144,85 @@ const buildPollyWorkflow = (
         },
         ResultPath: '$',
       },
-      SynthTitle: {
-        Type: 'Task',
-        Next: `SynthParagraphs`,
-        Parameters: {
-          OutputS3BucketName: bucket.bucketName,
-          'Text.$': '$.title',
-          Engine: 'neural',
-          TextType: 'ssml',
-          OutputFormat: 'mp3',
-          'LanguageCode.$': '$.language',
-          'VoiceId.$': '$.selectedVoice.name',
-          OutputS3KeyPrefix: 'audio/',
-        },
-        Retry: [
+      ParallelAudioGeneration: {
+        Type: 'Parallel',
+        Next: 'MergeAudioFilesLambda',
+        Branches: [
           {
-            ErrorEquals: ['States.ALL'],
-            BackoffRate: 2,
-            IntervalSeconds: 2,
-            MaxAttempts: 6,
-            Comment: 'RetryPolly',
+            StartAt: 'SynthTitle',
+            States: {
+              SynthTitle: {
+                Type: 'Task',
+                Parameters: {
+                  OutputS3BucketName: bucket.bucketName,
+                  'Text.$': '$.title',
+                  Engine: 'neural',
+                  TextType: 'ssml',
+                  OutputFormat: 'mp3',
+                  'LanguageCode.$': '$.language',
+                  'VoiceId.$': '$.selectedVoice.name',
+                  OutputS3KeyPrefix: 'audio/',
+                },
+                Retry: [
+                  {
+                    ErrorEquals: ['States.ALL'],
+                    BackoffRate: 2,
+                    IntervalSeconds: 2,
+                    MaxAttempts: 6,
+                    Comment: 'RetryPolly',
+                  },
+                ],
+                Resource:
+                  'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
+                ResultPath: '$.titleOutput',
+                End: true,
+              },
+            },
+          },
+          {
+            StartAt: 'SynthParagraphs',
+            States: {
+              SynthParagraphs: {
+                Type: 'Map',
+                InputPath: '$.textInput',
+                MaxConcurrency: 5,
+                Iterator: {
+                  StartAt: 'SynthParagraphAudio',
+                  States: {
+                    SynthParagraphAudio: {
+                      Type: 'Task',
+                      End: true,
+                      Parameters: {
+                        OutputS3BucketName: bucket.bucketName,
+                        'Text.$': '$.text',
+                        TextType: 'ssml',
+                        Engine: 'neural',
+                        'LanguageCode.$': '$.language',
+                        'VoiceId.$': '$.selectedVoice.name',
+                        OutputFormat: 'mp3',
+                        OutputS3KeyPrefix: 'audio/',
+                      },
+                      ResultPath: '$.audioOutput',
+                      Resource:
+                        'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
+                      Retry: [
+                        {
+                          ErrorEquals: ['States.ALL'],
+                          BackoffRate: 2,
+                          IntervalSeconds: 2,
+                          MaxAttempts: 3,
+                          Comment: 'RetryPolly',
+                        },
+                      ],
+                    },
+                  },
+                },
+                ResultPath: '$.paragraphsOutput',
+                End: true,
+              },
+            },
           },
         ],
-        Resource: 'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
-        ResultPath: '$.titleOutput',
-      },
-      SynthParagraphs: {
-        Type: 'Map',
-        Next: `MergeAudioFilesLambda`,
-        InputPath: '$.textInput',
-        MaxConcurrency: 5,
-        Iterator: {
-          StartAt: `SynthParagraphAudio`,
-          States: {
-            SynthParagraphAudio: {
-              Type: 'Task',
-              End: true,
-              // Next: `WaitForPolly`,
-              Parameters: {
-                OutputS3BucketName: bucket.bucketName,
-                'Text.$': '$.text',
-                TextType: 'ssml',
-                Engine: 'neural',
-                'LanguageCode.$': '$.language',
-                'VoiceId.$': '$.selectedVoice.name',
-                OutputFormat: 'mp3',
-                OutputS3KeyPrefix: 'audio/',
-              },
-              ResultPath: '$.audioOutput',
-              Resource:
-                'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
-              Retry: [
-                {
-                  ErrorEquals: ['States.ALL'],
-                  BackoffRate: 2,
-                  IntervalSeconds: 2,
-                  MaxAttempts: 3,
-                  Comment: 'RetryPolly',
-                },
-              ],
-            },
-            // WaitForPolly: {
-            //   Type: 'Task',
-            //   End: true,
-            //   Resource: 'arn:aws:states:::lambda:invoke',
-            //   Parameters: {
-            //     'Payload.$': '$',
-            //     FunctionName: createPollyLambda.functionArn,
-            //   },
-            //   Retry: [
-            //     {
-            //       ErrorEquals: [
-            //         'Lambda.ServiceException',
-            //         'Lambda.AWSLambdaException',
-            //         'Lambda.SdkClientException',
-            //         'Lambda.TooManyRequestsException',
-            //       ],
-            //       IntervalSeconds: 1,
-            //       MaxAttempts: 3,
-            //       BackoffRate: 2,
-            //     },
-            //   ],
-            // }
-            // SynthParagraphTranscription: {
-            //   Type: 'Task',
-            //   End: true,
-            //   Parameters: {
-            //     OutputS3BucketName: bucket.bucketName,
-            //     'Text.$': '$.text',
-            //     TextType: 'ssml',
-            //     Engine: 'neural',
-            //     OutputFormat: 'json',
-            //     OutputS3KeyPrefix: 'transcription/',
-            //     SpeechMarkTypes: ['sentence'],
-            //     'LanguageCode.$': '$.language',
-            //     'VoiceId.$': '$.selectedVoice.name',
-            //   },
-            //   ResultPath: '$.transcriptionOutput',
-            //   Resource:
-            //     'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
-            //   Retry: [
-            //     {
-            //       ErrorEquals: ['States.ALL'],
-            //       BackoffRate: 2,
-            //       IntervalSeconds: 2,
-            //       MaxAttempts: 3,
-            //       Comment: 'RetryPolly',
-            //     },
-            //   ],
-            // },
-          },
-        },
-        ResultPath: '$.paragraphsOutput',
       },
       MergeAudioFilesLambda: {
         Type: 'Task',
