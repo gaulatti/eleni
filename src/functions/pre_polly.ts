@@ -1,17 +1,16 @@
 import { delay, excapeSSMLCharacters } from '../utils';
 
-const main = async (event: any, _context: any, callback: any) => {
-  const { selectedVoice, language, text, title, byline } = event;
-  const preparedTitle = `<speak>${`${excapeSSMLCharacters(title)}<p>${excapeSSMLCharacters(byline)}</p>`}</speak>`;
+const prepareTitle = (title: string, byline: string): string => {
+  return `<speak>${`${excapeSSMLCharacters(title)}<p>${excapeSSMLCharacters(
+    byline
+  )}</p>`}</speak>`;
+};
 
-  const delayAmount = Math.random() * 2000;
-  await delay(delayAmount);
-
+const groupParagraphs = (text: string, maxCharacterLimit: number) => {
   const paragraphs = text
     .split('\n')
-    .map((item: string) => `<p>${excapeSSMLCharacters(item)}</p>`);
+    .map((item: string) => `<p>${item}</p>`);
 
-  const maxCharacterLimit = 2900;
   const paragraphGroups = [];
   let currentGroup: string[] = [];
 
@@ -19,9 +18,11 @@ const main = async (event: any, _context: any, callback: any) => {
     if (currentGroup.join(' ').length + paragraph.length <= maxCharacterLimit) {
       currentGroup.push(paragraph);
     } else {
-      paragraphGroups.push(
-        `<speak>${currentGroup.join(' ')}</speak>`
-      );
+      if (currentGroup.length > 0) {  // Check if currentGroup is not empty
+        paragraphGroups.push(
+          `<speak>${currentGroup.join(' ')}</speak>`
+        );
+      }
       currentGroup = [paragraph];
     }
   }
@@ -33,9 +34,26 @@ const main = async (event: any, _context: any, callback: any) => {
     );
   }
 
-  const textInput = paragraphGroups.map((text) => ({ text, language, selectedVoice }));
+  return paragraphGroups;
+}
+
+
+const main = async (event: any, _context: any, callback: any) => {
+  const { selectedVoice, language, text, title, byline } = event;
+
+  const preparedTitle = prepareTitle(title, byline);
+
+  await delay(Math.random() * 2000);
+
+  const paragraphGroups = groupParagraphs(text, 2900);
+
+  const textInput = paragraphGroups.map((text) => ({
+    text,
+    language,
+    selectedVoice,
+  }));
 
   return { title: preparedTitle, selectedVoice, language, textInput };
 };
 
-export { main };
+export { groupParagraphs, prepareTitle, main };
