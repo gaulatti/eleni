@@ -3,8 +3,8 @@ import { Bucket } from 'aws-cdk-lib/aws-s3';
 
 const buildBucket = (stack: Stack) => {
   const bucket = new Bucket(stack, 'ArticlesToSpeechBucket', {
+    bucketName: 'articles-to-speech-debra',
     removalPolicy: RemovalPolicy.DESTROY,
-    publicReadAccess: true
   });
   return bucket;
 };

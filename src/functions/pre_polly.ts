@@ -7,9 +7,7 @@ const prepareTitle = (title: string, byline: string): string => {
 };
 
 const groupParagraphs = (text: string, maxCharacterLimit: number) => {
-  const paragraphs = text
-    .split('\n')
-    .map((item: string) => `<p>${item}</p>`);
+  const paragraphs = text.split('\n').map((item: string) => `<p>${item}</p>`);
 
   const paragraphGroups = [];
   let currentGroup: string[] = [];
@@ -18,10 +16,8 @@ const groupParagraphs = (text: string, maxCharacterLimit: number) => {
     if (currentGroup.join(' ').length + paragraph.length <= maxCharacterLimit) {
       currentGroup.push(paragraph);
     } else {
-      if (currentGroup.length > 0) {  // Check if currentGroup is not empty
-        paragraphGroups.push(
-          `<speak>${currentGroup.join(' ')}</speak>`
-        );
+      if (currentGroup.length > 0) {
+        paragraphGroups.push(`<speak>${currentGroup.join(' ')}</speak>`);
       }
       currentGroup = [paragraph];
     }
@@ -29,31 +25,30 @@ const groupParagraphs = (text: string, maxCharacterLimit: number) => {
 
   // Add the last group if not empty
   if (currentGroup.length > 0) {
-    paragraphGroups.push(
-      `<speak>${currentGroup.join(' ')}</speak>`
-    );
+    paragraphGroups.push(`<speak>${currentGroup.join(' ')}</speak>`);
   }
 
   return paragraphGroups;
-}
+};
 
-
-const main = async (event: any, _context: any, callback: any) => {
+const main = async (event: any, _context: any, _callback: any) => {
   const { selectedVoice, language, text, title, byline } = event;
 
   const preparedTitle = prepareTitle(title, byline);
 
   await delay(Math.random() * 2000);
 
-  const paragraphGroups = groupParagraphs(text, 2900);
-
-  const textInput = paragraphGroups.map((text) => ({
-    text,
-    language,
-    selectedVoice,
+  const paragraphGroups = groupParagraphs(text, 2900).map((item: string) => ({
+    text: item,
+    voice: selectedVoice.name,
   }));
 
-  return { title: preparedTitle, selectedVoice, language, textInput };
+  return {
+    title: preparedTitle,
+    selectedVoice,
+    language,
+    text: paragraphGroups,
+  };
 };
 
 export { groupParagraphs, prepareTitle, main };

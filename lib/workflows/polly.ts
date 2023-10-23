@@ -23,8 +23,21 @@ const buildPollyWorkflow = (
   });
 
   const languagesStateTemplate = {
-    StartAt: `PreTranslate`,
+    StartAt: `AvoidTranslateEN`,
     States: {
+      AvoidTranslateEN: {
+        Type: 'Choice',
+        Choices: [
+          {
+            Not: {
+              Variable: '$.language.translate',
+              StringEquals: 'en',
+            },
+            Next: `PreTranslate`,
+          },
+        ],
+        Default: `PrePollyNotTranslated`,
+      },
       PreTranslate: {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
@@ -32,7 +45,7 @@ const buildPollyWorkflow = (
           FunctionName: preTranslateLambda.functionArn,
           'Payload.$': '$',
         },
-        Next: `AvoidTranslateEN`,
+        Next: `ParallelTranslation`,
         ResultSelector: {
           'title.$': '$.Payload.title',
           'language.$': '$.Payload.language',
@@ -43,73 +56,117 @@ const buildPollyWorkflow = (
         },
         ResultPath: '$',
       },
-      AvoidTranslateEN: {
-        Type: 'Choice',
-        Choices: [
+      ParallelTranslation: {
+        Type: 'Parallel',
+        Next: 'MergeTranslations',
+        Branches: [
           {
-            Not: {
-              Variable: '$.translate',
-              StringEquals: 'en',
+            StartAt: 'TranslateTitle',
+            States: {
+              TranslateTitle: {
+                Type: 'Task',
+                Parameters: {
+                  SourceLanguageCode: 'en-US',
+                  'TargetLanguageCode.$': '$.translate',
+                  'Text.$': '$.title',
+                },
+                Resource: 'arn:aws:states:::aws-sdk:translate:translateText',
+                ResultPath: '$.titleTranslationResult',
+                Next: 'ReshapeTitleTranslation',
+              },
+              ReshapeTitleTranslation: {
+                Type: 'Pass',
+                ResultPath: '$',
+                Parameters: {
+                  'selectedVoice.$': '$.selectedVoice',
+                  'language.$': '$.language',
+                  'text.$': '$.text',
+                  'title.$': '$.titleTranslationResult.TranslatedText',
+                  'byline.$': '$.byline',
+                  'translate.$': '$.translate',
+                },
+                End: true,
+              },
             },
-            Next: `TranslateTitle`,
+          },
+          {
+            StartAt: 'TranslateByline',
+            States: {
+              TranslateByline: {
+                Type: 'Task',
+                Parameters: {
+                  SourceLanguageCode: 'en-US',
+                  'TargetLanguageCode.$': '$.translate',
+                  'Text.$': '$.byline',
+                },
+                Resource: 'arn:aws:states:::aws-sdk:translate:translateText',
+                ResultPath: '$.bylineTranslationResult',
+                Next: 'ReshapeBylineTranslation',
+              },
+              ReshapeBylineTranslation: {
+                Type: 'Pass',
+                ResultPath: '$',
+                Parameters: {
+                  'selectedVoice.$': '$.selectedVoice',
+                  'language.$': '$.language',
+                  'text.$': '$.text',
+                  'title.$': '$.title',
+                  'byline.$': '$.bylineTranslationResult.TranslatedText',
+                  'translate.$': '$.translate',
+                },
+                End: true,
+              },
+            },
+          },
+          {
+            StartAt: 'TranslateContent',
+            States: {
+              TranslateContent: {
+                Type: 'Task',
+                Parameters: {
+                  SourceLanguageCode: 'en-US',
+                  'TargetLanguageCode.$': '$.translate',
+                  'Text.$': '$.text',
+                },
+                Resource: 'arn:aws:states:::aws-sdk:translate:translateText',
+                ResultPath: '$.textTranslationResult',
+                Next: 'ReshapeContentTranslation',
+              },
+              ReshapeContentTranslation: {
+                Type: 'Pass',
+                ResultPath: '$',
+                Parameters: {
+                  'selectedVoice.$': '$.selectedVoice',
+                  'language.$': '$.language',
+                  'text.$': '$.textTranslationResult.TranslatedText',
+                  'title.$': '$.title',
+                  'byline.$': '$.byline',
+                  'translate.$': '$.translate',
+                },
+                End: true,
+              },
+            },
           },
         ],
-        Default: `PrePollyNotTranslated`,
       },
-      TranslateTitle: {
-        Type: 'Task',
-        Next: `TranslateByline`,
+      MergeTranslations: {
+        Type: 'Pass',
         Parameters: {
-          SourceLanguageCode: 'en-US',
-          'TargetLanguageCode.$': '$.translate',
-          'Text.$': '$.title',
+          'selectedVoice.$': '$[0].selectedVoice',
+          'language.$': '$[0].language',
+          'title.$': '$[0].title',
+          'byline.$': '$[1].byline',
+          'text.$': '$[2].text',
+          'translate.$': '$[0].translate',
         },
-        Resource: 'arn:aws:states:::aws-sdk:translate:translateText',
-        ResultPath: '$.translation.title',
-        ResultSelector: {
-          'text.$': '$.TranslatedText',
-        },
-      },
-      TranslateByline: {
-        Type: 'Task',
-        Next: `TranslateContent`,
-        Parameters: {
-          SourceLanguageCode: 'en-US',
-          'TargetLanguageCode.$': '$.translate',
-          'Text.$': '$.byline',
-        },
-        Resource: 'arn:aws:states:::aws-sdk:translate:translateText',
-        ResultSelector: {
-          'text.$': '$.TranslatedText',
-        },
-        ResultPath: '$.translation.byline',
-      },
-      TranslateContent: {
-        Type: 'Task',
-        Next: `PrePollyTranslated`,
-        Parameters: {
-          SourceLanguageCode: 'en-US',
-          'TargetLanguageCode.$': '$.translate',
-          'Text.$': '$.text',
-        },
-        Resource: 'arn:aws:states:::aws-sdk:translate:translateText',
-        ResultPath: '$.translation.content',
-        ResultSelector: {
-          'text.$': '$.TranslatedText',
-        },
+        Next: 'PrePollyTranslated',
       },
       PrePollyNotTranslated: {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
         Parameters: {
           FunctionName: prePollyLambda.functionArn,
-          Payload: {
-            'title.$': '$.title',
-            'text.$': '$.text',
-            'byline.$': '$.byline',
-            'selectedVoice.$': '$.selectedVoice',
-            'language.$': '$.language',
-          },
+          'Payload.$': '$',
         },
         Next: `ParallelAudioGeneration`,
         ResultSelector: {
@@ -126,20 +183,14 @@ const buildPollyWorkflow = (
         Resource: 'arn:aws:states:::lambda:invoke',
         Parameters: {
           FunctionName: prePollyLambda.functionArn,
-          Payload: {
-            'title.$': '$.translation.title.text',
-            'text.$': '$.translation.content.text',
-            'byline.$': '$.translation.byline.text',
-            'selectedVoice.$': '$.selectedVoice',
-            'language.$': '$.language',
-          },
+          'Payload.$': '$',
         },
         Next: `ParallelAudioGeneration`,
         ResultSelector: {
           'uuid.$': '$$.Execution.Input.uuid',
           'title.$': '$.Payload.title',
           'language.$': '$.Payload.language',
-          'textInput.$': '$.Payload.textInput',
+          'text.$': '$.Payload.text',
           'selectedVoice.$': '$.Payload.selectedVoice',
         },
         ResultPath: '$',
@@ -174,7 +225,7 @@ const buildPollyWorkflow = (
                 ],
                 Resource:
                   'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
-                ResultPath: '$.titleOutput',
+                ResultPath: '$.title',
                 End: true,
               },
             },
@@ -184,7 +235,7 @@ const buildPollyWorkflow = (
             States: {
               SynthParagraphs: {
                 Type: 'Map',
-                InputPath: '$.textInput',
+                InputPath: '$.text',
                 MaxConcurrency: 5,
                 Iterator: {
                   StartAt: 'SynthParagraphAudio',
@@ -197,8 +248,8 @@ const buildPollyWorkflow = (
                         'Text.$': '$.text',
                         TextType: 'ssml',
                         Engine: 'neural',
-                        'LanguageCode.$': '$.language',
-                        'VoiceId.$': '$.selectedVoice.name',
+                        'LanguageCode.$': '$$.Execution.Input.language.code',
+                        'VoiceId.$': '$.voice',
                         OutputFormat: 'mp3',
                         OutputS3KeyPrefix: 'audio/',
                       },
@@ -217,7 +268,7 @@ const buildPollyWorkflow = (
                     },
                   },
                 },
-                ResultPath: '$.paragraphsOutput',
+                ResultPath: '$.text',
                 End: true,
               },
             },

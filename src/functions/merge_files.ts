@@ -2,19 +2,21 @@ import {
   GetObjectCommand,
   GetObjectCommandOutput,
   PutObjectCommand,
-  S3Client
+  S3Client,
 } from '@aws-sdk/client-s3';
 import { exec as originalExec } from 'child_process';
 import { Readable } from 'stream';
 import { ArticleStatus, getArticlesTableInstance } from '../utils/dal/articles';
-import fs = require('fs');
-import os = require('os');
+import { createReadStream, createWriteStream, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+
 const db = getArticlesTableInstance();
 const client = new S3Client();
+const BUCKET_URL = `https://s3.us-east-1.amazonaws.com/${process.env.BUCKET_NAME}/`;
 
 function streamToFile(stream: Readable, filename: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const fileStream = fs.createWriteStream(filename);
+    const fileStream = createWriteStream(filename);
     stream.pipe(fileStream);
     stream.on('error', reject);
     fileStream.on('finish', resolve);
@@ -34,8 +36,36 @@ function exec(command: string): Promise<{ stdout: string; stderr: string }> {
   });
 }
 
+async function fetchFromS3(bucket: string, key: string): Promise<Readable> {
+  const getObjectRequest = new GetObjectCommand({ Bucket: bucket, Key: key });
+  const response: GetObjectCommandOutput = await client.send(getObjectRequest);
+
+  if (!response.Body) throw new Error('Failed to retrieve object body.');
+
+  return response.Body as Readable;
+}
+
+async function concatenateAudioFiles(inputFiles: string[], outputFile: string) {
+  const localUrls = inputFiles.map(
+    (url) => `${tmpdir()}/${url.split('/').pop()}`
+  );
+
+  for (let i in inputFiles) {
+    const audioStream = await fetchFromS3(process.env.BUCKET_NAME!, inputFiles[i]);
+    await streamToFile(audioStream, localUrls[i]);
+  }
+
+  const fileListPath = '/tmp/filelist.txt';
+  const fileContent = localUrls.map((path) => `file '${path}'`).join('\n');
+  writeFileSync(fileListPath, fileContent);
+
+  console.log('filelist', fileListPath);
+  const command = `ffmpeg -f concat -safe 0 -i ${fileListPath} -c copy ${outputFile}`;
+  await exec(command);
+}
+
 async function uploadFileToS3(bucket: string, key: string, filePath: string) {
-  const fileStream = fs.createReadStream(filePath);
+  const fileStream = createReadStream(filePath);
   const client = new S3Client({ region: 'us-east-1' });
 
   const input = {
@@ -55,89 +85,34 @@ const main = async (event: any, _context: any, callback: any) => {
     uuid,
     language,
   } = event;
+
   try {
-    const bucketName = 'debrastack-articlestospeechbucket802d2e55-507ica0b9b8p';
-
-    const { OutputUri: titleUri } = titleTask;
-
-    const inputFiles = [
-      titleUri.replace(
-        'https://s3.us-east-1.amazonaws.com/debrastack-articlestospeechbucket802d2e55-507ica0b9b8p/',
-        ''
-      ),
-    ];
-
-    console.log('pre-para', { inputFiles });
-
-    paragraphsOutput.forEach(
-      (paragraph: {
-        audioOutput: { SynthesisTask: { OutputUri: string } };
-      }) => {
-        inputFiles.push(
-          paragraph.audioOutput.SynthesisTask.OutputUri.replace(
-            'https://s3.us-east-1.amazonaws.com/debrastack-articlestospeechbucket802d2e55-507ica0b9b8p/',
-            ''
-          )
-        );
-      }
+    const inputFiles = [titleTask.OutputUri.replace(BUCKET_URL, '')];
+    inputFiles.push(
+      ...paragraphsOutput.map((p: any) =>
+        p.audioOutput.SynthesisTask.OutputUri.replace(BUCKET_URL, '')
+      )
     );
 
-    console.log('post-para', { inputFiles });
-    const localUrls = inputFiles.map((url: string) => {
-      const splitUrl = url.split('/');
-      return `${os.tmpdir()}/${splitUrl[splitUrl.length - 1]}`;
-    });
-
-    console.log('post-para', { localUrls });
-
-    const tmpOutputFile = `${os.tmpdir()}/output.mp3`;
+    const tmpOutputFile = `${tmpdir()}/output.mp3`;
     const outputFile = `full/${uuid}-${language}.mp3`;
 
-    console.log({ tmpOutputFile, outputFile });
-
-    for (let i in inputFiles) {
-      const input = {
-        Bucket: bucketName,
-        Key: inputFiles[i],
-      };
-      console.log({ input });
-      const getObjectRequest = new GetObjectCommand(input);
-      const response: GetObjectCommandOutput = await client.send(
-        getObjectRequest
-      );
-
-      if (!response.Body) {
-        throw new Error('Failed to retrieve object body.');
-      }
-      console.log('file successfully obtained');
-      await streamToFile(response.Body as Readable, localUrls[i]);
-      console.log('file successfully saved');
-    }
-
-    const fileListPath = '/tmp/filelist.txt';
-    const fileContent = localUrls.map((path) => `file '${path}'`).join('\n');
-
-    fs.writeFileSync(fileListPath, fileContent);
-
-    const command = `ffmpeg -f concat -safe 0 -i ${fileListPath} -c copy ${tmpOutputFile}`;
-    await exec(command);
-
-    await uploadFileToS3(bucketName, outputFile, tmpOutputFile);
+    console.log('preconcatenate');
+    await concatenateAudioFiles(inputFiles, tmpOutputFile);
+    console.log('preupload');
+    await uploadFileToS3(process.env.BUCKET_NAME!, outputFile, tmpOutputFile);
+    console.log('preupdate');
     const article = await db.get(uuid);
     const outputs = article?.outputs || {};
+    outputs[language] = { url: `${BUCKET_URL}${outputFile}` };
 
-    outputs[language] = {
-      url: `https://debrastack-articlestospeechbucket802d2e55-507ica0b9b8p.s3.amazonaws.com/full/${uuid}-${language}.mp3`,
-    };
-    console.log('predb update')
     await db.updateRendered(uuid, outputs);
-    console.log('postdb update')
   } catch (error) {
     await db.updateStatus(uuid, ArticleStatus.FAILED);
     throw error;
   }
-  console.log('returning')
-  callback(null, event)
+
+  callback(null, event);
   return event;
 };
 

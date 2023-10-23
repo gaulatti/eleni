@@ -19,6 +19,9 @@ const buildMergeFilesLambda = (
     layers: [ffmpegLayer],
     runtime: Runtime.NODEJS_LATEST,
     timeout: Duration.seconds(30),
+    environment: {
+      BUCKET_NAME: bucket.bucketName,
+    },
   });
 
   articlesTable.grantReadWriteData(getLambda)
