@@ -1,5 +1,4 @@
 import { getArticlesTableInstance } from '../../../src/utils/dal/articles';
-import { GetCommand } from '@aws-sdk/lib-dynamodb';
 
 // Mocking AWS SDK
 jest.mock('@aws-sdk/lib-dynamodb', () => {

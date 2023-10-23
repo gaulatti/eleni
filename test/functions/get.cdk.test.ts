@@ -26,7 +26,7 @@ describe('buildGetLambda', () => {
     assert.hasResourceProperties('AWS::Lambda::Function', {
       FunctionName: 'ArticlesToSpeechGet',
       Handler: 'index.main',
-      Runtime: Runtime.NODEJS_LATEST.toString(), // Note: This might change based on what NODEJS_LATEST maps to at the time of testing
+      Runtime: Runtime.NODEJS_LATEST.toString(),
       Timeout: 120,
     });
 

@@ -1,5 +1,4 @@
 import { getTasksTableInstance } from '../../../src/utils/dal/tasks';
-import { GetCommand } from '@aws-sdk/lib-dynamodb';
 
 // Mocking AWS SDK
 jest.mock('@aws-sdk/lib-dynamodb', () => {

@@ -1,7 +1,5 @@
-import { getArticlesTableInstance } from './dal/articles';
 import { LanguageObject, pollyLanguages } from './consts/languages';
 
-const articlesTableInstance = getArticlesTableInstance();
 const excapeSSMLCharacters = (text: string) => {
   return text
     .replace(/"/g, '&quot;')
