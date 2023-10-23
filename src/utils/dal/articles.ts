@@ -15,7 +15,6 @@ const docClient = DynamoDBDocumentClient.from(dynamoClient, {
     removeUndefinedValues: true,
   },
 });
-
 let dbInstance: DBClient | null = null;
 
 enum ArticleStatus {

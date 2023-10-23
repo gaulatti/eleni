@@ -1,4 +1,4 @@
-import { ArticleStatus, getArticlesTableInstance } from '../utils/dal';
+import { ArticleStatus, getArticlesTableInstance } from '../utils/dal/articles';
 
 const db = getArticlesTableInstance();
 

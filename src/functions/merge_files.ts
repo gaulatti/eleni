@@ -6,7 +6,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { exec as originalExec } from 'child_process';
 import { Readable } from 'stream';
-import { ArticleStatus, getArticlesTableInstance } from '../utils/dal';
+import { ArticleStatus, getArticlesTableInstance } from '../utils/dal/articles';
 import fs = require('fs');
 import os = require('os');
 const db = getArticlesTableInstance();

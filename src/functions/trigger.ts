@@ -1,7 +1,7 @@
 import { SFNClient, StartExecutionCommand } from '@aws-sdk/client-sfn';
 import axios from 'axios';
 import { load } from 'cheerio';
-import { getArticlesTableInstance } from '../utils/dal';
+import { getArticlesTableInstance } from '../utils/dal/articles';
 import { pollyLanguages } from '../utils/consts/languages';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 

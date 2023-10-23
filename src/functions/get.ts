@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getArticlesTableInstance } from '../utils/dal';
+import { getArticlesTableInstance } from '../utils/dal/articles';
 import {
   checkLanguagesPresent,
   delay,

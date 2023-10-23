@@ -1,4 +1,4 @@
-import { getArticlesTableInstance } from './dal';
+import { getArticlesTableInstance } from './dal/articles';
 import { LanguageObject, pollyLanguages } from './consts/languages';
 
 const articlesTableInstance = getArticlesTableInstance();

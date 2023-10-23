@@ -7,7 +7,7 @@ import {
   Mp3RateControlMode,
   OutputGroupType,
 } from '@aws-sdk/client-mediaconvert';
-import { getArticlesTableInstance } from '../utils/dal';
+import { getArticlesTableInstance } from '../utils/dal/articles';
 
 const client = new MediaConvertClient({
   endpoint: 'https://q25wbt2lc.mediaconvert.us-east-1.amazonaws.com',

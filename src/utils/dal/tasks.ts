@@ -86,7 +86,7 @@ class DBClient {
   }
 }
 
-const getDbInstance = () => {
+const getTasksTableInstance = () => {
   if (!dbInstance) {
     dbInstance = new DBClient();
   }
@@ -94,4 +94,4 @@ const getDbInstance = () => {
   return dbInstance;
 };
 
-export { TaskStatus, getDbInstance };
+export { TaskStatus, getTasksTableInstance };
