@@ -1,7 +1,6 @@
-import { buildArticlesTable } from '../lib/database/articles'; // Adjust the path accordingly
 import { Stack } from 'aws-cdk-lib';
-import { Table } from 'aws-cdk-lib/aws-dynamodb';
 import { Template } from 'aws-cdk-lib/assertions';
+import { buildArticlesTable } from '../../lib/database/articles';
 
 describe('buildArticlesTable', () => {
   let stack: Stack;
@@ -12,7 +11,7 @@ describe('buildArticlesTable', () => {
 
   it('should create a table with the specified attributes', () => {
     buildArticlesTable(stack);
-    
+
     const assert = Template.fromStack(stack);
     assert.resourceCountIs('AWS::DynamoDB::Table', 1);
     assert.hasResourceProperties('AWS::DynamoDB::Table', {
