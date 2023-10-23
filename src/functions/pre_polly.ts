@@ -32,11 +32,14 @@ const groupParagraphs = (text: string, maxCharacterLimit: number) => {
 };
 
 const main = async (event: any, _context: any, _callback: any) => {
-  const { selectedVoice, language, text, title, byline } = event;
+  const { uuid, url, language, text, title, byline } = event;
 
   const preparedTitle = prepareTitle(title, byline);
 
   await delay(Math.random() * 2000);
+
+  const selectedVoice =
+    language.items[Math.floor(Math.random() * language.items.length)];
 
   const paragraphGroups = groupParagraphs(text, 2900).map((item: string) => ({
     text: item,
@@ -44,6 +47,8 @@ const main = async (event: any, _context: any, _callback: any) => {
   }));
 
   return {
+    uuid,
+    url,
     title: preparedTitle,
     selectedVoice,
     language,

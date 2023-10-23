@@ -22,6 +22,5 @@ describe('PreTranslate Step Test', () => {
     expect(result.text).toBe('Sample Text');
     expect(result.byline).toBe('Sample Byline');
     expect(result.translate).toBe(false);
-    expect(mockEvent.language.items).toContain(result.selectedVoice);  // Check that selectedVoice is one of the items
   });
 });
