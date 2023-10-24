@@ -5,20 +5,23 @@ import { Table, AttributeType } from 'aws-cdk-lib/aws-dynamodb';
 import { Template } from 'aws-cdk-lib/assertions';
 import { buildGetLambda } from '../../lib/functions/get';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
 
 describe('buildGetLambda', () => {
   let stack: Stack;
   let table: Table;
+  let bucket: Bucket;
 
   beforeEach(() => {
     stack = new Stack();
     table = new Table(stack, 'TestTable', {
       partitionKey: { name: 'id', type: AttributeType.STRING },
     });
+    bucket = new Bucket(stack, 'TestBucket', {})
   });
 
   it('should create a Lambda function with the specified attributes', () => {
-    const lambda = buildGetLambda(stack, table);
+    const lambda = buildGetLambda(stack, table, bucket);
 
     const assert = Template.fromStack(stack);
     assert.resourceCountIs('AWS::Lambda::Function', 1);

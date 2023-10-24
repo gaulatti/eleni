@@ -4,9 +4,7 @@ import { Construct } from 'constructs';
 import { buildBucket } from './assets/bucket';
 import { buildArticlesTable } from './database/articles';
 import { buildTasksTable } from './database/tasks';
-import { buildDeliverLambda } from './functions/deliver';
 import { buildGetLambda } from './functions/get';
-import { buildMergeLambda } from './functions/merge';
 import { buildMergeFilesLambda } from './functions/merge_files';
 import { buildPrePollyLambda } from './functions/pre_polly';
 import { buildPreTranslateLambda } from './functions/pre_translate';
@@ -20,14 +18,10 @@ export class DebraStack extends Stack {
 
     const articlesTable = buildArticlesTable(this);
     const tasksTable = buildTasksTable(this);
-
     const pollyListenerLambda = buildPollyListenerLambda(this, tasksTable);
     const pollyWaitLambda = buildPollyWaitLambda(this, tasksTable);
     const bucket = buildBucket(this, pollyListenerLambda);
-
-    const mergeLambda = buildMergeLambda(this, bucket, articlesTable);
-    const deliverLambda = buildDeliverLambda(this, articlesTable);
-    const getLambda = buildGetLambda(this, articlesTable);
+    const getLambda = buildGetLambda(this, articlesTable, bucket);
     const preTranslateLambda = buildPreTranslateLambda(this);
     const prePollyLambda = buildPrePollyLambda(this);
     const mergeFilesLambda = buildMergeFilesLambda(
@@ -69,7 +63,6 @@ export class DebraStack extends Stack {
     const stateMachine = buildPollyWorkflow(
       this,
       bucket,
-      mergeLambda,
       preTranslateLambda,
       prePollyLambda,
       mergeFilesLambda,

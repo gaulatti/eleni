@@ -14,7 +14,6 @@ import { buildPollyWaitLambda } from '../functions/polly_wait';
 const buildPollyWorkflow = (
   stack: Stack,
   bucket: Bucket,
-  mergeLambda: NodejsFunction,
   preTranslateLambda: NodejsFunction,
   prePollyLambda: NodejsFunction,
   mergeFilesLambda: NodejsFunction,
@@ -348,15 +347,12 @@ const buildPollyWorkflow = (
     })
   );
 
-  mergeLambda.grantInvoke(stateMachine);
   preTranslateLambda.grantInvoke(stateMachine);
   prePollyLambda.grantInvoke(stateMachine);
   mergeFilesLambda.grantInvoke(stateMachine);
   pollyWaitLambda.grantInvoke(stateMachine);
   bucket.grantReadWrite(stateMachine);
-
   stateMachine.grantTaskResponse(pollyListenerLambda);
-  // stateMachine.grantTaskResponse(mergeFilesLambda);
 
   return stateMachine;
 };

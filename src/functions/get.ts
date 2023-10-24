@@ -1,5 +1,13 @@
+import {
+  GetObjectCommand,
+  GetObjectCommandInput,
+  GetObjectCommandOutput,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { S3RequestPresigner } from '@aws-sdk/s3-request-presigner';
+import { createRequest } from '@aws-sdk/util-create-request';
+import { formatUrl } from '@aws-sdk/util-format-url';
 import { v4 as uuidv4 } from 'uuid';
-import { getArticlesTableInstance } from '../utils/dal/articles';
 import {
   checkLanguagesPresent,
   delay,
@@ -7,8 +15,21 @@ import {
   lambdaHttpOutput,
   sanitizeGetInputs,
 } from '../utils';
-
+import { getArticlesTableInstance } from '../utils/dal/articles';
 const db = getArticlesTableInstance();
+const client = new S3Client();
+const presigner = new S3RequestPresigner(client.config);
+
+function parseS3Url(url: string) {
+  const match = url.match(/https:\/\/s3\..+\.amazonaws\.com\/([^\/]+)\/(.+)/);
+  if (!match || match.length !== 3) {
+    throw new Error('Invalid S3 URL');
+  }
+  return {
+    Bucket: match[1],
+    Key: decodeURIComponent(match[2]),
+  };
+}
 
 const main = async (event: any, _context: any, _callback: any) => {
   try {
@@ -20,7 +41,7 @@ const main = async (event: any, _context: any, _callback: any) => {
       existingItem = await db.get(articleId);
     }
 
-    if(href) {
+    if (href) {
       url = extractPathWithTrailingSlash(href);
     }
 
@@ -56,6 +77,30 @@ const main = async (event: any, _context: any, _callback: any) => {
     while (!checkLanguagesPresent(existingItem, language)) {
       await delay(1000);
       existingItem = await db.get(uuid);
+    }
+    if (existingItem) {
+      const keys = Object.keys(existingItem['outputs']);
+      for (let key in keys) {
+        const { Bucket, Key } = parseS3Url(
+          existingItem['outputs'][keys[key]]['url']
+        );
+
+        const command = new GetObjectCommand({
+          Bucket,
+          Key,
+        });
+
+        const request = await createRequest<
+          any,
+          GetObjectCommandInput,
+          GetObjectCommandOutput
+        >(new S3Client({}), command);
+        const signedUrl = formatUrl(
+          await presigner.presign(request, { expiresIn: 3600 })
+        );
+
+        existingItem['outputs'][keys[key]]['url'] = signedUrl;
+      }
     }
 
     return lambdaHttpOutput(200, existingItem);
