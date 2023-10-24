@@ -4,12 +4,14 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { SFNClient, SendTaskFailureCommand, SendTaskSuccessCommand } from '@aws-sdk/client-sfn';
 import { exec as originalExec } from 'child_process';
-import { Readable } from 'stream';
-import { ArticleStatus, getArticlesTableInstance } from '../utils/dal/articles';
 import { createReadStream, createWriteStream, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
+import { Readable } from 'stream';
+import { ArticleStatus, getArticlesTableInstance } from '../utils/dal/articles';
 
+const stepFunctionsClient = new SFNClient({});
 const db = getArticlesTableInstance();
 const client = new S3Client();
 const BUCKET_URL = `https://s3.us-east-1.amazonaws.com/${process.env.BUCKET_NAME}/`;
@@ -51,7 +53,10 @@ async function concatenateAudioFiles(inputFiles: string[], outputFile: string) {
   );
 
   for (let i in inputFiles) {
-    const audioStream = await fetchFromS3(process.env.BUCKET_NAME!, inputFiles[i]);
+    const audioStream = await fetchFromS3(
+      process.env.BUCKET_NAME!,
+      inputFiles[i]
+    );
     await streamToFile(audioStream, localUrls[i]);
   }
 
@@ -79,37 +84,37 @@ async function uploadFileToS3(bucket: string, key: string, filePath: string) {
 }
 
 const main = async (event: any, _context: any, callback: any) => {
-  const {
-    titleOutput: { SynthesisTask: titleTask },
-    paragraphsOutput,
-    uuid,
-    language,
-  } = event;
+  const { title, text = [], uuid, language, token } = event;
 
   try {
-    const inputFiles = [titleTask.OutputUri.replace(BUCKET_URL, '')];
-    inputFiles.push(
-      ...paragraphsOutput.map((p: any) =>
-        p.audioOutput.SynthesisTask.OutputUri.replace(BUCKET_URL, '')
-      )
-    );
+    const inputFiles = [title.replace(BUCKET_URL, '')];
+    inputFiles.push(...text.map((p: any) => p.url.replace(BUCKET_URL, '')));
 
     const tmpOutputFile = `${tmpdir()}/output.mp3`;
     const outputFile = `full/${uuid}-${language}.mp3`;
 
-    console.log('preconcatenate');
     await concatenateAudioFiles(inputFiles, tmpOutputFile);
-    console.log('preupload');
     await uploadFileToS3(process.env.BUCKET_NAME!, outputFile, tmpOutputFile);
-    console.log('preupdate');
     const article = await db.get(uuid);
     const outputs = article?.outputs || {};
     outputs[language] = { url: `${BUCKET_URL}${outputFile}` };
 
     await db.updateRendered(uuid, outputs);
+    const input = {
+      taskToken: token,
+      output: JSON.stringify({ uuid, outputs }),
+    };
+    const command = new SendTaskSuccessCommand(input);
+    const response = await stepFunctionsClient.send(command);
+
   } catch (error) {
     await db.updateStatus(uuid, ArticleStatus.FAILED);
-    throw error;
+    const input = {
+      taskToken: token,
+      output: JSON.stringify({ uuid }),
+    };
+    const command = new SendTaskFailureCommand(input);
+    const response = await stepFunctionsClient.send(command);
   }
 
   callback(null, event);

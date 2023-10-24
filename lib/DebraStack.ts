@@ -12,13 +12,19 @@ import { buildPrePollyLambda } from './functions/pre_polly';
 import { buildPreTranslateLambda } from './functions/pre_translate';
 import { buildTriggerLambda } from './functions/trigger';
 import { buildPollyWorkflow } from './workflows/polly';
+import { buildPollyListenerLambda } from './functions/polly_listener';
+import { buildPollyWaitLambda } from './functions/polly_wait';
 export class DebraStack extends Stack {
   constructor(scope: Construct, uuid: string, props?: StackProps) {
     super(scope, uuid, props);
 
-    const bucket = buildBucket(this);
     const articlesTable = buildArticlesTable(this);
     const tasksTable = buildTasksTable(this);
+
+    const pollyListenerLambda = buildPollyListenerLambda(this, tasksTable);
+    const pollyWaitLambda = buildPollyWaitLambda(this, tasksTable);
+    const bucket = buildBucket(this, pollyListenerLambda);
+
     const mergeLambda = buildMergeLambda(this, bucket, articlesTable);
     const deliverLambda = buildDeliverLambda(this, articlesTable);
     const getLambda = buildGetLambda(this, articlesTable);
@@ -66,7 +72,9 @@ export class DebraStack extends Stack {
       mergeLambda,
       preTranslateLambda,
       prePollyLambda,
-      mergeFilesLambda
+      mergeFilesLambda,
+      pollyWaitLambda,
+      pollyListenerLambda,
     );
 
     const triggerLambda = buildTriggerLambda(this, articlesTable, stateMachine);

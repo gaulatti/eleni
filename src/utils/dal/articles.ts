@@ -69,7 +69,7 @@ class DBClient {
 
     await docClient.send(command);
 
-    return { uuid };
+    return { uuid, url };
   }
 
   public async updateStatus(uuid: string, status: ArticleStatus) {

@@ -1,5 +1,10 @@
 import { Stack } from 'aws-cdk-lib';
-import { AttributeType, BillingMode, StreamViewType, Table } from 'aws-cdk-lib/aws-dynamodb';
+import {
+  AttributeType,
+  BillingMode,
+  StreamViewType,
+  Table,
+} from 'aws-cdk-lib/aws-dynamodb';
 
 const buildArticlesTable = (stack: Stack) => {
   const table: Table = new Table(stack, 'ArticlesTable', {
@@ -11,10 +16,10 @@ const buildArticlesTable = (stack: Stack) => {
 
   table.addGlobalSecondaryIndex({
     indexName: 'UrlIndex',
-    partitionKey: { name: 'url', type: AttributeType.STRING }
+    partitionKey: { name: 'url', type: AttributeType.STRING },
   });
 
-  return table
+  return table;
 };
 
 export { buildArticlesTable };

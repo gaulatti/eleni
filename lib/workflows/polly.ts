@@ -10,13 +10,16 @@ import {
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { DefinitionBody, StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
+import { buildPollyWaitLambda } from '../functions/polly_wait';
 const buildPollyWorkflow = (
   stack: Stack,
   bucket: Bucket,
   mergeLambda: NodejsFunction,
   preTranslateLambda: NodejsFunction,
   prePollyLambda: NodejsFunction,
-  mergeFilesLambda: NodejsFunction
+  mergeFilesLambda: NodejsFunction,
+  pollyWaitLambda: NodejsFunction,
+  pollyListenerLambda: NodejsFunction
 ) => {
   const stateMachineRole = new Role(stack, 'StateMachineRole', {
     assumedBy: new ServicePrincipal('states.amazonaws.com'),
@@ -180,7 +183,7 @@ const buildPollyWorkflow = (
       },
       ParallelAudioGeneration: {
         Type: 'Parallel',
-        Next: 'MergeAudioFilesLambda',
+        Next: 'MergeSynthesis',
         Branches: [
           {
             StartAt: 'SynthTitle',
@@ -209,7 +212,24 @@ const buildPollyWorkflow = (
                 Resource:
                   'arn:aws:states:::aws-sdk:polly:startSpeechSynthesisTask',
                 ResultPath: '$.title',
+                Next: 'WaitForTitle',
+              },
+              WaitForTitle: {
+                Type: 'Task',
+                Resource: 'arn:aws:states:::lambda:invoke.waitForTaskToken',
+                Parameters: {
+                  FunctionName: pollyWaitLambda.functionArn,
+                  Payload: {
+                    'title.$': '$.title',
+                    textType: 'title',
+                    'token.$': '$$.Task.Token',
+                  },
+                },
                 End: true,
+                ResultSelector: {
+                  'title.$': '$.url',
+                },
+                ResultPath: '$',
               },
             },
           },
@@ -225,7 +245,7 @@ const buildPollyWorkflow = (
                   States: {
                     SynthParagraphAudio: {
                       Type: 'Task',
-                      End: true,
+                      Next: 'WaitForParagraph',
                       Parameters: {
                         OutputS3BucketName: bucket.bucketName,
                         'Text.$': '$.text',
@@ -249,6 +269,24 @@ const buildPollyWorkflow = (
                         },
                       ],
                     },
+                    WaitForParagraph: {
+                      Type: 'Task',
+                      Resource:
+                        'arn:aws:states:::lambda:invoke.waitForTaskToken',
+                      Parameters: {
+                        FunctionName: pollyWaitLambda.functionArn,
+                        Payload: {
+                          'audioOutput.$': '$.audioOutput',
+                          textType: 'paragraph',
+                          'token.$': '$$.Task.Token',
+                        },
+                      },
+                      End: true,
+                      ResultSelector: {
+                        'url.$': '$.url',
+                      },
+                      ResultPath: '$',
+                    },
                   },
                 },
                 ResultPath: '$.text',
@@ -258,12 +296,27 @@ const buildPollyWorkflow = (
           },
         ],
       },
+      MergeSynthesis: {
+        Type: 'Pass',
+        Next: 'MergeAudioFilesLambda',
+        Parameters: {
+          'uuid.$': '$$.Execution.Input.uuid',
+          'title.$': '$[0].title',
+          'text.$': '$[1].text',
+        },
+      },
       MergeAudioFilesLambda: {
         Type: 'Task',
         End: true,
-        Resource: 'arn:aws:states:::lambda:invoke',
+        Resource: 'arn:aws:states:::lambda:invoke.waitForTaskToken',
         Parameters: {
-          'Payload.$': '$',
+          Payload: {
+            'uuid.$': '$$.Execution.Input.uuid',
+            'title.$': '$.title',
+            'text.$': '$.text',
+            'language.$': '$$.Execution.Input.language.code',
+            'token.$': '$$.Task.Token',
+          },
           FunctionName: mergeFilesLambda.functionArn,
         },
         Retry: [
@@ -299,7 +352,11 @@ const buildPollyWorkflow = (
   preTranslateLambda.grantInvoke(stateMachine);
   prePollyLambda.grantInvoke(stateMachine);
   mergeFilesLambda.grantInvoke(stateMachine);
+  pollyWaitLambda.grantInvoke(stateMachine);
   bucket.grantReadWrite(stateMachine);
+
+  stateMachine.grantTaskResponse(pollyListenerLambda);
+  // stateMachine.grantTaskResponse(mergeFilesLambda);
 
   return stateMachine;
 };

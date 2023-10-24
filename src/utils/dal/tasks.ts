@@ -1,4 +1,10 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import {
+  DynamoDBClient,
+  QueryCommand,
+  ScanCommand,
+} from '@aws-sdk/client-dynamodb';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
+
 import {
   DynamoDBDocumentClient,
   GetCommand,
@@ -27,7 +33,23 @@ class DBClient {
     this.tableName = 'TasksTable';
   }
 
-  public async get(uuid: string) {
+  public async list() {
+    const command = new ScanCommand({
+      TableName: this.tableName,
+    });
+
+    const response = await docClient.send(command);
+
+    if(response.Items) {
+      return response.Items?.map((item) => unmarshall(item))
+    }
+
+    return [];
+  }
+
+  public async get(uuid: string | null | undefined) {
+    if (!uuid) return null;
+
     const command = new GetCommand({
       TableName: this.tableName,
       Key: {
@@ -39,26 +61,27 @@ class DBClient {
     return response.Item;
   }
 
-  public async create(uuid: string) {
-    const Item = {
-      uuid,
-      article_status: TaskStatus.PENDING,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  public async create(uuid: string, url: string, token: string, ttl: number) {
     const command = new PutCommand({
       TableName: this.tableName,
-      Item,
+      Item: {
+        uuid,
+        url,
+        token,
+        ttl,
+        task_status: TaskStatus.PENDING,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
     });
 
     await docClient.send(command);
 
-    return Item
+    return { uuid, url };
   }
 
   public async updateStatus(uuid: string, status: TaskStatus) {
-    let UpdateExpression =
-      'set article_status = :status, updatedAt = :updatedAt';
+    let UpdateExpression = 'set task_status = :status, updatedAt = :updatedAt';
     let ExpressionAttributeValues: { [k: string]: any } = {
       ':status': status,
       ':updatedAt': new Date().toISOString(),
@@ -83,6 +106,28 @@ class DBClient {
     });
 
     return await docClient.send(command);
+  }
+
+  public async queryByUrl(url: string | null | undefined) {
+    if (!url) return null;
+    const command = new QueryCommand({
+      TableName: this.tableName,
+      IndexName: 'UrlIndex',
+      KeyConditionExpression: '#urlAttribute = :urlVal',
+      ExpressionAttributeNames: {
+        '#urlAttribute': 'url',
+      },
+      ExpressionAttributeValues: {
+        ':urlVal': { S: url },
+      },
+    });
+
+    console.log({ command: JSON.stringify(command) });
+
+    const response = await docClient.send(command);
+    console.log({ response: JSON.stringify(response) });
+
+    return response.Items?.[0] ? unmarshall(response.Items[0]) : null;
   }
 }
 

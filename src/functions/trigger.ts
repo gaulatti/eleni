@@ -43,11 +43,11 @@ const startStepFunctionExecution = async (
 
 const main = async (event: any) => {
   for (const record of event.Records) {
-    const item = unmarshall(record.dynamodb.NewImage);
+    const item = record.dynamodb.NewImage;
 
     if (record.eventName === 'INSERT') {
-      const uuid: string = item.uuid;
-      const url: string = item.url;
+      const uuid: string = item.uuid.S;
+      const url: string = item.url.S;
 
       try {
         const { title, byline, text } = await fetchAndParseArticle(url);
@@ -62,6 +62,7 @@ const main = async (event: any) => {
             byline,
             language
           );
+
           console.log(`Step Function execution started`, {
             title,
             language,
