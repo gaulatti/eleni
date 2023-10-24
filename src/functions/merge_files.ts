@@ -9,7 +9,7 @@ import {
   SendTaskFailureCommand,
   SendTaskSuccessCommand,
 } from '@aws-sdk/client-sfn';
-import { exec as originalExec } from 'child_process';
+import { execSync } from 'child_process';
 import { createReadStream, createWriteStream, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { Readable } from 'stream';
@@ -30,22 +30,19 @@ function streamToFile(stream: Readable, filename: string): Promise<void> {
   });
 }
 
-function exec(command: string): Promise<{ stdout: string; stderr: string }> {
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error('Exec command timed out after 10 seconds.'));
-    }, 10000);
-    originalExec(command, (error, stdout, stderr) => {
-      clearTimeout(timeout);
-      if (error) {
-        console.error('Exec error:', error);
-        console.error('Exec stderr:', stderr);
-        reject(error);
-        return;
-      }
-      resolve({ stdout, stderr });
-    });
-  });
+function exec(command: string): { stdout: string; stderr: string } {
+  try {
+    // Execute the command synchronously
+    const stdout = execSync(command, { timeout: 10000 }).toString();
+    return { stdout, stderr: '' };
+  } catch (error: any) {
+    console.error('Exec error:', error);
+    if (error.stderr) {
+      console.error('Exec stderr:', error.stderr.toString());
+      return { stdout: '', stderr: error.stderr.toString() };
+    }
+    throw error;
+  }
 }
 
 async function fetchFromS3(bucket: string, key: string): Promise<Readable> {
@@ -78,7 +75,8 @@ async function concatenateAudioFiles(inputFiles: string[], outputFile: string) {
   const command = `ffmpeg -f concat -safe 0 -i ${fileListPath} -c copy ${outputFile}`;
   console.log('Executing ffmpeg command...');
   try {
-    await exec(command);
+    const { stdout, stderr } = exec(command);
+    console.log({ stdout, stderr })
   } catch (error) {
     console.error('Error executing ffmpeg command:', error);
   }
@@ -101,6 +99,7 @@ async function uploadFileToS3(bucket: string, key: string, filePath: string) {
 
 const main = async (event: any, _context: any, callback: any) => {
   const { title, text = [], uuid, language, token } = event;
+  console.log(JSON.stringify(event));
 
   try {
     const inputFiles = [title.replace(BUCKET_URL, '')];
