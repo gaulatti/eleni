@@ -16,6 +16,13 @@ import {
   sanitizeGetInputs,
 } from '../utils';
 import { getArticlesTableInstance } from '../utils/dal/articles';
+
+
+interface ExistingItem {
+  uuid: string;
+  outputs: Record<string, { url: string }>;
+}
+
 const db = getArticlesTableInstance();
 const client = new S3Client();
 const presigner = new S3RequestPresigner(client.config);
@@ -80,27 +87,31 @@ const main = async (event: any, _context: any, _callback: any) => {
     }
     if (existingItem) {
       const keys = Object.keys(existingItem['outputs']);
-      for (let key in keys) {
-        const { Bucket, Key } = parseS3Url(
-          existingItem['outputs'][keys[key]]['url']
-        );
 
-        const command = new GetObjectCommand({
-          Bucket,
-          Key,
-        });
+      await Promise.all(
+        keys.map(async (key) => {
+          const { Bucket, Key } = parseS3Url(
+            existingItem!['outputs'][key]['url']
+          );
 
-        const request = await createRequest<
-          any,
-          GetObjectCommandInput,
-          GetObjectCommandOutput
-        >(new S3Client({}), command);
-        const signedUrl = formatUrl(
-          await presigner.presign(request, { expiresIn: 3600 })
-        );
+          const command = new GetObjectCommand({
+            Bucket,
+            Key,
+          });
 
-        existingItem['outputs'][keys[key]]['url'] = signedUrl;
-      }
+          const request = await createRequest<
+            any,
+            GetObjectCommandInput,
+            GetObjectCommandOutput
+          >(new S3Client({}), command);
+
+          const signedUrl = formatUrl(
+            await presigner.presign(request, { expiresIn: 3600 })
+          );
+
+          existingItem!['outputs'][key]['url'] = signedUrl;
+        })
+      );
     }
 
     return lambdaHttpOutput(200, existingItem);
