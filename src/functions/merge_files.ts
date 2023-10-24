@@ -105,7 +105,7 @@ const main = async (event: any, _context: any, callback: any) => {
     const inputFiles = [title.replace(BUCKET_URL, '')];
     inputFiles.push(...text.map((p: any) => p.url.replace(BUCKET_URL, '')));
 
-    const tmpOutputFile = `${tmpdir()}/output.mp3`;
+    const tmpOutputFile = `${tmpdir()}/${uuid}-${language}.mp3`;
     const outputFile = `full/${uuid}-${language}.mp3`;
 
     await concatenateAudioFiles(inputFiles, tmpOutputFile);
