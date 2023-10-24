@@ -4,7 +4,11 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { SFNClient, SendTaskFailureCommand, SendTaskSuccessCommand } from '@aws-sdk/client-sfn';
+import {
+  SFNClient,
+  SendTaskFailureCommand,
+  SendTaskSuccessCommand,
+} from '@aws-sdk/client-sfn';
 import { exec as originalExec } from 'child_process';
 import { createReadStream, createWriteStream, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
@@ -28,8 +32,14 @@ function streamToFile(stream: Readable, filename: string): Promise<void> {
 
 function exec(command: string): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('Exec command timed out after 10 seconds.'));
+    }, 10000);
     originalExec(command, (error, stdout, stderr) => {
+      clearTimeout(timeout);
       if (error) {
+        console.error('Exec error:', error);
+        console.error('Exec stderr:', stderr);
         reject(error);
         return;
       }
@@ -66,7 +76,13 @@ async function concatenateAudioFiles(inputFiles: string[], outputFile: string) {
 
   console.log('filelist', fileListPath);
   const command = `ffmpeg -f concat -safe 0 -i ${fileListPath} -c copy ${outputFile}`;
-  await exec(command);
+  console.log('Executing ffmpeg command...');
+  try {
+    await exec(command);
+  } catch (error) {
+    console.error('Error executing ffmpeg command:', error);
+  }
+  console.log('ffmpeg command exited');
 }
 
 async function uploadFileToS3(bucket: string, key: string, filePath: string) {
@@ -106,7 +122,6 @@ const main = async (event: any, _context: any, callback: any) => {
     };
     const command = new SendTaskSuccessCommand(input);
     const response = await stepFunctionsClient.send(command);
-
   } catch (error) {
     await db.updateStatus(uuid, ArticleStatus.FAILED);
     const input = {

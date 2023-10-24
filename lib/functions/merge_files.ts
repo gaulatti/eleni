@@ -27,7 +27,8 @@ const buildMergeFilesLambda = (
       handler: 'main',
       layers: [ffmpegLayer],
       runtime: Runtime.NODEJS_LATEST,
-      timeout: Duration.seconds(30),
+      timeout: Duration.seconds(15),
+      memorySize: 512,
       environment: {
         BUCKET_NAME: bucket.bucketName,
       },
