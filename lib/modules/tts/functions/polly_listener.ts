@@ -9,7 +9,7 @@ const buildPollyListenerLambda = (stack: Stack, table: Table) => {
     `ArticlesToSpeechPollyListenerLambda`,
     {
       functionName: `ArticlesToSpeechPollyListener`,
-      entry: './src/functions/polly_listener.ts',
+      entry: './src/functions/tts/polly_listener.ts',
       handler: 'main',
       runtime: Runtime.NODEJS_LATEST,
       timeout: Duration.minutes(1),

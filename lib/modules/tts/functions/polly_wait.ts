@@ -6,7 +6,7 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 const buildPollyWaitLambda = (stack: Stack, table: Table) => {
   const pollyWaitLambda = new NodejsFunction(stack, `ArticlesToSpeechPollyWaitLambda`, {
     functionName: `ArticlesToSpeechPollyWait`,
-    entry: './src/functions/polly_wait.ts',
+    entry: './src/functions/tts/polly_wait.ts',
     handler: 'main',
     runtime: Runtime.NODEJS_LATEST,
     timeout: Duration.minutes(1),

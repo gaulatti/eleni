@@ -1,9 +1,10 @@
 import { Duration, Stack } from 'aws-cdk-lib';
 import { Table } from 'aws-cdk-lib/aws-dynamodb';
+import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
+import { STACK_NAME } from '../../../consts';
 
 const buildMergeFilesLambda = (
   stack: Stack,
@@ -11,7 +12,7 @@ const buildMergeFilesLambda = (
   tasksTable: Table,
   bucket: Bucket
 ) => {
-  const ffmpegLayerArn = 'arn:aws:lambda:us-east-1:876173464768:layer:ffmpeg:1';
+  const ffmpegLayerArn = `arn:aws:lambda:us-east-1:${stack.account}:layer:ffmpeg:1`;
   const ffmpegLayer = LayerVersion.fromLayerVersionArn(
     stack,
     'ffmpegLayer',
@@ -20,10 +21,10 @@ const buildMergeFilesLambda = (
 
   const getLambda = new NodejsFunction(
     stack,
-    `ArticlesToSpeechMergeFilesLambda`,
+    `${STACK_NAME}ArticlesToSpeechMergeFilesLambda`,
     {
-      functionName: `ArticlesToSpeechMergeFilesLambda`,
-      entry: './src/functions/merge_files.ts',
+      functionName: `${STACK_NAME}ArticlesToSpeechMergeFilesLambda`,
+      entry: './src/functions/tts/merge_files.ts',
       handler: 'main',
       layers: [ffmpegLayer],
       runtime: Runtime.NODEJS_LATEST,

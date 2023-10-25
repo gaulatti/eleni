@@ -5,10 +5,11 @@ import {
   StreamViewType,
   Table,
 } from 'aws-cdk-lib/aws-dynamodb';
+import { STACK_NAME } from '../consts';
 
 const buildTasksTable = (stack: Stack) => {
-  const table: Table = new Table(stack, 'TasksTable', {
-    tableName: 'TasksTable',
+  const table: Table = new Table(stack, `${STACK_NAME}TasksTable`, {
+    tableName: `${STACK_NAME}TasksTable`,
     partitionKey: { name: 'uuid', type: AttributeType.STRING },
     stream: StreamViewType.NEW_IMAGE,
     billingMode: BillingMode.PAY_PER_REQUEST,
