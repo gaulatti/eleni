@@ -31,6 +31,8 @@ const buildTtsContentWorkflow = (
   const getLambda = buildGetLambda(stack, contentTable, bucket);
 
   const api = buildTtsContentApi(stack, getLambda);
+
+  return { getLambda };
 };
 
 export { buildTtsContentWorkflow };

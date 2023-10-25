@@ -1,0 +1,27 @@
+scalar AWSDateTime
+
+type IDOutput {
+  uuid: ID!
+}
+
+input GetContentAudioInput {
+  url: String
+  uuid: String
+  language: String
+}
+
+type ContentAudioOutput {
+  url: String
+}
+
+type ContentAudio {
+  url: String!
+  uuid: ID!
+  outputs: [ContentAudioOutput]
+  updatedAt: AWSDateTime!
+  createdAt: AWSDateTime!
+}
+
+type Query {
+  getContentAudio(name: GetContentAudioInput!): ContentAudio
+}

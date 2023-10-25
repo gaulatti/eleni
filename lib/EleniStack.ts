@@ -4,6 +4,7 @@ import { buildDatabases } from './databases';
 import { buildTranslateModule } from './modules/translate';
 import { buildTtsResources } from './modules/tts';
 import { buildTtsContentWorkflow } from './workflows/ttsContent';
+import { buildAppsyncApi } from './appsync';
 export class EleniStack extends Stack {
   constructor(scope: Construct, uuid: string, props?: StackProps) {
     super(scope, uuid, props);
@@ -20,7 +21,7 @@ export class EleniStack extends Stack {
     } = buildTtsResources(this, tasksTable, contentTable);
 
 
-    const stateMachine = buildTtsContentWorkflow(
+    const { getLambda } = buildTtsContentWorkflow(
       this,
       bucket,
       contentTable,
@@ -30,5 +31,7 @@ export class EleniStack extends Stack {
       pollyWaitLambda,
       pollyListenerLambda
     );
+
+    const api = buildAppsyncApi(this, getLambda)
   }
 }

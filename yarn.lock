@@ -73,6 +73,11 @@
     "@aws-cdk/core" "1.204.0"
     constructs "^3.3.69"
 
+"@aws-cdk/aws-appsync-alpha@^2.59.0-alpha.0":
+  version "2.59.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-appsync-alpha/-/aws-appsync-alpha-2.59.0-alpha.0.tgz#896de9dee656da77c774cb3f8a1d968531e7167e"
+  integrity sha512-6Q1SpTw7F3TTrip7h7DHOqeCCPBeg0YveZZoWElHgYyi1LyVdMOvK8f2gxmrG9Z0mUpSeo2/FKkxUUC/+SJCLw==
+
 "@aws-cdk/aws-autoscaling-common@1.204.0":
   version "1.204.0"
   resolved "https://registry.npmjs.org/@aws-cdk/aws-autoscaling-common/-/aws-autoscaling-common-1.204.0.tgz"
