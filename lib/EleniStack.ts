@@ -12,7 +12,7 @@ import { buildTriggerLambda } from './functions/trigger';
 import { buildPollyWorkflow } from './workflows/polly';
 import { buildPollyListenerLambda } from './functions/polly_listener';
 import { buildPollyWaitLambda } from './functions/polly_wait';
-export class DebraStack extends Stack {
+export class EleniStack extends Stack {
   constructor(scope: Construct, uuid: string, props?: StackProps) {
     super(scope, uuid, props);
 

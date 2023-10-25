@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { DebraStack } from '../lib/DebraStack';
+import { EleniStack } from '../lib/EleniStack';
 
 const app = new cdk.App();
-new DebraStack(app, 'DebraStack', {
+new EleniStack(app, 'EleniStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */

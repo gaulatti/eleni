@@ -5,7 +5,7 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 
 const buildBucket = (stack: Stack, pollyListenerLambda: NodejsFunction) => {
   const bucket = new Bucket(stack, 'ArticlesToSpeechBucket', {
-    bucketName: 'articles-to-speech-debra',
+    bucketName: 'articles-to-speech-eleni',
     removalPolicy: RemovalPolicy.DESTROY,
   });
 

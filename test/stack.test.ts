@@ -1,9 +1,9 @@
-import { DebraStack } from '../lib/DebraStack';
+import { EleniStack } from '../lib/EleniStack';
 import { Template } from 'aws-cdk-lib/assertions';
 import { App } from 'aws-cdk-lib';
 
 describe('buildDeliverLambda', () => {
-  const stack = new DebraStack(new App(), 'TestStack');
+  const stack = new EleniStack(new App(), 'TestStack');
   const assertTemplate = Template.fromStack(stack);
 
   it('should create an S3 bucket', () => {

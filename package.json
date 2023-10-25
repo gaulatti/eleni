@@ -1,8 +1,8 @@
 {
-  "name": "debra",
+  "name": "eleni",
   "version": "0.1.0",
   "bin": {
-    "debra": "bin/debra.js"
+    "eleni": "bin/eleni.js"
   },
   "scripts": {
     "build": "tsc",
