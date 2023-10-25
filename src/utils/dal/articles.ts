@@ -27,8 +27,8 @@ enum ArticleStatus {
 class DBClient {
   private tableName: string;
 
-  constructor() {
-    this.tableName = 'ArticlesTable';
+  constructor(tableName: string) {
+    this.tableName = tableName;
   }
 
   public async list() {
@@ -179,9 +179,9 @@ class DBClient {
   }
 }
 
-const getArticlesTableInstance = () => {
+const getArticlesTableInstance = (tableName: String) => {
   if (!dbInstance) {
-    dbInstance = new DBClient();
+    dbInstance = new DBClient(tableName);
   }
 
   return dbInstance;

@@ -14,16 +14,10 @@ import {
   extractPathWithTrailingSlash,
   lambdaHttpOutput,
   sanitizeGetInputs,
-} from '../utils';
-import { getArticlesTableInstance } from '../utils/dal/articles';
+} from '../../../utils';
+import { getArticlesTableInstance } from '../../../utils/dal/articles';
 
-
-interface ExistingItem {
-  uuid: string;
-  outputs: Record<string, { url: string }>;
-}
-
-const db = getArticlesTableInstance();
+const db = getArticlesTableInstance(process.env.TABLE_NAME!);
 const client = new S3Client();
 const presigner = new S3RequestPresigner(client.config);
 

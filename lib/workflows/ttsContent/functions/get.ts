@@ -9,13 +9,20 @@ const buildGetLambda = (
   table: Table,
   bucket: Bucket
 ) => {
-  const getLambda = new NodejsFunction(stack, `${STACK_NAME}ContentToSpeechGet`, {
-    functionName: `${STACK_NAME}ContentToSpeechGet`,
-    entry: './src/functions/workflows/content-to-speech/get.ts',
-    handler: 'main',
-    runtime: Runtime.NODEJS_LATEST,
-    timeout: Duration.minutes(2),
-  });
+  const getLambda = new NodejsFunction(
+    stack,
+    `${STACK_NAME}ContentToSpeechGet`,
+    {
+      functionName: `${STACK_NAME}ContentToSpeechGet`,
+      entry: './src/functions/workflows/content-to-speech/get.ts',
+      handler: 'main',
+      runtime: Runtime.NODEJS_LATEST,
+      timeout: Duration.minutes(2),
+      environment: {
+        TABLE_NAME: table.tableName,
+      },
+    }
+  );
 
   bucket.grantRead(getLambda)
   table.grantReadWriteData(getLambda)

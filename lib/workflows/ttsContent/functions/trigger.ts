@@ -11,16 +11,21 @@ const buildTriggerLambda = (
   table: Table,
   stateMachine: StateMachine
 ) => {
-  const triggerLambda = new NodejsFunction(stack, `${STACK_NAME}ContentToSpeechTrigger`, {
-    functionName: `${STACK_NAME}ContentToSpeechTrigger`,
-    entry: './src/functions/workflows/content-to-speech/trigger.ts',
-    handler: 'main',
-    runtime: Runtime.NODEJS_LATEST,
-    timeout: Duration.minutes(1),
-    environment: {
-      STATE_MACHINE_ARN: stateMachine.stateMachineArn,
-    },
-  });
+  const triggerLambda = new NodejsFunction(
+    stack,
+    `${STACK_NAME}ContentToSpeechTrigger`,
+    {
+      functionName: `${STACK_NAME}ContentToSpeechTrigger`,
+      entry: './src/functions/workflows/content-to-speech/trigger.ts',
+      handler: 'main',
+      runtime: Runtime.NODEJS_LATEST,
+      timeout: Duration.minutes(1),
+      environment: {
+        STATE_MACHINE_ARN: stateMachine.stateMachineArn,
+        TABLE_NAME: table.tableName,
+      },
+    }
+  );
 
   stateMachine.grantStartExecution(triggerLambda);
   table.grantReadWriteData(triggerLambda);
