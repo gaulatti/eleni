@@ -1,4 +1,4 @@
-import { delay, excapeSSMLCharacters } from '../utils';
+import { delay, excapeSSMLCharacters } from '../../utils';
 
 const prepareTitle = (title: string, byline: string): string => {
   return `<speak>${`${excapeSSMLCharacters(title)}<p>${excapeSSMLCharacters(
@@ -56,4 +56,5 @@ const main = async (event: any, _context: any, _callback: any) => {
   };
 };
 
-export { groupParagraphs, prepareTitle, main };
+export { groupParagraphs, main, prepareTitle };
+

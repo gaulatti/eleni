@@ -14,6 +14,9 @@ const buildPollyListenerLambda = (stack: Stack, table: Table) => {
       handler: 'main',
       runtime: Runtime.NODEJS_LATEST,
       timeout: Duration.minutes(1),
+      environment: {
+        TABLE_NAME: table.tableName,
+      },
     }
   );
 

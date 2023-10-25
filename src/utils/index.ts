@@ -57,10 +57,6 @@ const checkLanguagesPresent = (item: any, language: string | null): boolean => {
 };
 
 export {
-  checkLanguagesPresent,
-  extractPathWithTrailingSlash,
-  excapeSSMLCharacters,
-  delay,
-  sanitizeGetInputs,
-  lambdaHttpOutput,
+  checkLanguagesPresent, delay, excapeSSMLCharacters, extractPathWithTrailingSlash, lambdaHttpOutput, sanitizeGetInputs
 };
+

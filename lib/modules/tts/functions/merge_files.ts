@@ -32,6 +32,7 @@ const buildMergeFilesLambda = (
       memorySize: 512,
       environment: {
         BUCKET_NAME: bucket.bucketName,
+        TABLE_NAME: contentTable.tableName,
       },
     }
   );

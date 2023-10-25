@@ -1,11 +1,10 @@
 import { SFNClient, StartExecutionCommand } from '@aws-sdk/client-sfn';
-import { unmarshall } from '@aws-sdk/util-dynamodb';
 import axios from 'axios';
 import { load } from 'cheerio';
 import { pollyLanguages } from '../../../utils/consts/languages';
-import { getArticlesTableInstance } from '../../../utils/dal/articles';
+import { getContentTableInstance } from '../../../utils/dal/content';
 
-const db = getArticlesTableInstance(process.env.TABLE_NAME!);
+const db = getContentTableInstance(process.env.TABLE_NAME!);
 const client = new SFNClient();
 
 const fetchAndParseArticle = async (url: string) => {
@@ -76,4 +75,4 @@ const main = async (event: any) => {
   }
 };
 
-export { fetchAndParseArticle, startStepFunctionExecution, main };
+export { fetchAndParseArticle, main, startStepFunctionExecution };

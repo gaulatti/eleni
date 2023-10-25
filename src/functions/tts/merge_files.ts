@@ -13,10 +13,10 @@ import { execSync } from 'child_process';
 import { createReadStream, createWriteStream, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { Readable } from 'stream';
-import { ArticleStatus, getArticlesTableInstance } from '../utils/dal/articles';
+import { ContentStatus, getContentTableInstance } from '../../utils/dal/content';
 
 const stepFunctionsClient = new SFNClient({});
-const db = getArticlesTableInstance();
+const db = getContentTableInstance(process.env.TABLE_NAME!);
 const client = new S3Client();
 const BUCKET_URL = `https://s3.us-east-1.amazonaws.com/${process.env.BUCKET_NAME}/`;
 
@@ -76,7 +76,7 @@ async function concatenateAudioFiles(inputFiles: string[], outputFile: string) {
   console.log('Executing ffmpeg command...');
   try {
     const { stdout, stderr } = exec(command);
-    console.log({ stdout, stderr })
+    console.log({ stdout, stderr });
   } catch (error) {
     console.error('Error executing ffmpeg command:', error);
   }
@@ -122,7 +122,7 @@ const main = async (event: any, _context: any, callback: any) => {
     const command = new SendTaskSuccessCommand(input);
     const response = await stepFunctionsClient.send(command);
   } catch (error) {
-    await db.updateStatus(uuid, ArticleStatus.FAILED);
+    await db.updateStatus(uuid, ContentStatus.FAILED);
     const input = {
       taskToken: token,
       output: JSON.stringify({ uuid }),

@@ -1,13 +1,13 @@
 import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
-import { unmarshall } from '@aws-sdk/util-dynamodb';
 import {
-  DynamoDBDocumentClient,
-  ScanCommand,
-  GetCommand,
   DeleteCommand,
+  DynamoDBDocumentClient,
+  GetCommand,
   PutCommand,
+  ScanCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient, {
@@ -17,7 +17,7 @@ const docClient = DynamoDBDocumentClient.from(dynamoClient, {
 });
 let dbInstance: DBClient | null = null;
 
-enum ArticleStatus {
+enum ContentStatus {
   PENDING = 'PENDING',
   RENDERED = 'RENDERED',
   DELIVERED = 'DELIVERED',
@@ -61,7 +61,7 @@ class DBClient {
       Item: {
         uuid,
         url,
-        article_status: ArticleStatus.PENDING,
+        article_status: ContentStatus.PENDING,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
@@ -72,7 +72,7 @@ class DBClient {
     return { uuid, url };
   }
 
-  public async updateStatus(uuid: string, status: ArticleStatus) {
+  public async updateStatus(uuid: string, status: ContentStatus) {
     let UpdateExpression =
       'set article_status = :status, updatedAt = :updatedAt';
     let ExpressionAttributeValues: { [k: string]: any } = {
@@ -97,7 +97,7 @@ class DBClient {
         url,
         type: 'merge',
         language,
-        article_status: ArticleStatus.RENDERED,
+        article_status: ContentStatus.RENDERED,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
@@ -179,7 +179,7 @@ class DBClient {
   }
 }
 
-const getArticlesTableInstance = (tableName: String) => {
+const getContentTableInstance = (tableName: string) => {
   if (!dbInstance) {
     dbInstance = new DBClient(tableName);
   }
@@ -187,4 +187,4 @@ const getArticlesTableInstance = (tableName: String) => {
   return dbInstance;
 };
 
-export { ArticleStatus, getArticlesTableInstance };
+export { ContentStatus, getContentTableInstance };

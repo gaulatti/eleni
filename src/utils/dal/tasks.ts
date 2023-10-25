@@ -29,8 +29,8 @@ enum TaskStatus {
 class DBClient {
   private tableName: string;
 
-  constructor() {
-    this.tableName = 'TasksTable';
+  constructor(tableName: string) {
+    this.tableName = tableName;
   }
 
   public async list() {
@@ -40,8 +40,8 @@ class DBClient {
 
     const response = await docClient.send(command);
 
-    if(response.Items) {
-      return response.Items?.map((item) => unmarshall(item))
+    if (response.Items) {
+      return response.Items?.map((item) => unmarshall(item));
     }
 
     return [];
@@ -131,9 +131,9 @@ class DBClient {
   }
 }
 
-const getTasksTableInstance = () => {
+const getTasksTableInstance = (tableName: string) => {
   if (!dbInstance) {
-    dbInstance = new DBClient();
+    dbInstance = new DBClient(tableName);
   }
 
   return dbInstance;

@@ -15,9 +15,9 @@ import {
   lambdaHttpOutput,
   sanitizeGetInputs,
 } from '../../../utils';
-import { getArticlesTableInstance } from '../../../utils/dal/articles';
+import { getContentTableInstance } from '../../../utils/dal/content';
 
-const db = getArticlesTableInstance(process.env.TABLE_NAME!);
+const db = getContentTableInstance(process.env.TABLE_NAME!);
 const client = new S3Client();
 const presigner = new S3RequestPresigner(client.config);
 

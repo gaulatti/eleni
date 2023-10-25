@@ -6,7 +6,7 @@ import { STACK_NAME } from '../../../consts';
 
 const buildBucket = (stack: Stack, pollyListenerLambda: NodejsFunction) => {
   const bucket = new Bucket(stack, `${STACK_NAME}TextToSpeechBucket`, {
-    bucketName: `${STACK_NAME.toLowerCase}-text-to-speech`,
+    bucketName: `${STACK_NAME.toLowerCase()}-text-to-speech`,
     removalPolicy: RemovalPolicy.DESTROY,
   });
 

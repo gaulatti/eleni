@@ -1,8 +1,8 @@
 import { SFNClient, SendTaskSuccessCommand } from '@aws-sdk/client-sfn';
-import { TaskStatus, getTasksTableInstance } from '../utils/dal/tasks';
+import { TaskStatus, getTasksTableInstance } from '../../utils/dal/tasks';
 
 const client = new SFNClient({});
-const db = getTasksTableInstance();
+const db = getTasksTableInstance(process.env.TABLE_NAME!);
 
 const main = async (event: any, _context: any, callback: any) => {
   const { Records } = event;

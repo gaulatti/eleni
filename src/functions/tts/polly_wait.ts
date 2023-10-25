@@ -1,6 +1,6 @@
-import { getTasksTableInstance } from '../utils/dal/tasks';
+import { getTasksTableInstance } from '../../utils/dal/tasks';
 
-const db = getTasksTableInstance();
+const db = getTasksTableInstance(process.env.TABLE_NAME!);
 
 const main = async (event: any, _context: any, _callback: any) => {
   const { textType, title, token, audioOutput } = event;
