@@ -4,15 +4,16 @@ import { Runtime, StartingPosition } from 'aws-cdk-lib/aws-lambda';
 import { DynamoEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
+import { STACK_NAME } from '../../../consts';
 
 const buildTriggerLambda = (
   stack: Stack,
   table: Table,
   stateMachine: StateMachine
 ) => {
-  const triggerLambda = new NodejsFunction(stack, `ArticlesToSpeechTrigger`, {
-    functionName: `ArticlesToSpeechTrigger`,
-    entry: './src/functions/trigger.ts',
+  const triggerLambda = new NodejsFunction(stack, `${STACK_NAME}ContentToSpeechTrigger`, {
+    functionName: `${STACK_NAME}ContentToSpeechTrigger`,
+    entry: './src/functions/workflows/content-to-speech/trigger.ts',
     handler: 'main',
     runtime: Runtime.NODEJS_LATEST,
     timeout: Duration.minutes(1),

@@ -40,12 +40,12 @@ function parseS3Url(url: string) {
 
 const main = async (event: any, _context: any, _callback: any) => {
   try {
-    const { articleId, href, language } = sanitizeGetInputs(event);
-    if (!articleId && !href) throw new Error('Missing articleId or url');
+    const { contentId, href, language } = sanitizeGetInputs(event);
+    if (!contentId && !href) throw new Error('Missing contentId or url');
     let existingItem, url, uuid;
 
-    if (articleId) {
-      existingItem = await db.get(articleId);
+    if (contentId) {
+      existingItem = await db.get(contentId);
     }
 
     if (href) {

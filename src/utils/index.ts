@@ -18,15 +18,15 @@ const delay = async (milliseconds = 1000) => {
 const sanitizeGetInputs = (event: any) => {
   const { httpMethod, pathParameters = {}, body = '{}' } = event;
 
-  const articleId =
+  const contentId =
     httpMethod === 'POST'
-      ? JSON.parse(body).articleId
-      : pathParameters.articleId;
+      ? JSON.parse(body).contentId
+      : pathParameters.contentId;
 
   const href = httpMethod === 'POST' ? JSON.parse(body).url : null;
   const language = httpMethod === 'POST' ? JSON.parse(body).language : null;
 
-  return { articleId, href, language };
+  return { contentId, href, language };
 };
 
 const extractPathWithTrailingSlash = (url: string) => {

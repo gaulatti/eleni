@@ -8,7 +8,7 @@ import { STACK_NAME } from '../../../consts';
 
 const buildMergeFilesLambda = (
   stack: Stack,
-  articlesTable: Table,
+  contentTable: Table,
   tasksTable: Table,
   bucket: Bucket
 ) => {
@@ -21,9 +21,9 @@ const buildMergeFilesLambda = (
 
   const getLambda = new NodejsFunction(
     stack,
-    `${STACK_NAME}ArticlesToSpeechMergeFilesLambda`,
+    `${STACK_NAME}TextToSpeechMergeFilesLambda`,
     {
-      functionName: `${STACK_NAME}ArticlesToSpeechMergeFilesLambda`,
+      functionName: `${STACK_NAME}TextToSpeechMergeFilesLambda`,
       entry: './src/functions/tts/merge_files.ts',
       handler: 'main',
       layers: [ffmpegLayer],
@@ -43,7 +43,7 @@ const buildMergeFilesLambda = (
   });
 
   getLambda.role?.addToPrincipalPolicy(sendTaskSuccessPolicy);
-  articlesTable.grantReadWriteData(getLambda);
+  contentTable.grantReadWriteData(getLambda);
   tasksTable.grantReadWriteData(getLambda);
   bucket.grantReadWrite(getLambda);
 

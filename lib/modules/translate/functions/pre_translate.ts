@@ -6,9 +6,9 @@ import { STACK_NAME } from '../../../consts';
 const buildPreTranslateLambda = (stack: Stack) => {
   const deliverLambda = new NodejsFunction(
     stack,
-    `${STACK_NAME}ArticlesToSpeechPreTranslateLambda`,
+    `${STACK_NAME}TextPreTranslateLambda`,
     {
-      functionName: `${STACK_NAME}ArticlesToSpeechPreTranslate`,
+      functionName: `${STACK_NAME}TextPreTranslate`,
       entry: './src/functions/translate/pre_translate.ts',
       handler: 'main',
       runtime: Runtime.NODEJS_LATEST,

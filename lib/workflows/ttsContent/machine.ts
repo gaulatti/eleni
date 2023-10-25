@@ -1,16 +1,14 @@
 import { Stack } from 'aws-cdk-lib';
 import {
-  Effect,
   ManagedPolicy,
-  Policy,
   PolicyStatement,
   Role,
-  ServicePrincipal,
+  ServicePrincipal
 } from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { DefinitionBody, StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
-import { buildPollyWaitLambda } from '../modules/tts/functions/polly_wait';
+import { STACK_NAME } from '../../consts';
 const buildPollyWorkflow = (
   stack: Stack,
   bucket: Bucket,
@@ -20,7 +18,7 @@ const buildPollyWorkflow = (
   pollyWaitLambda: NodejsFunction,
   pollyListenerLambda: NodejsFunction
 ) => {
-  const stateMachineRole = new Role(stack, 'StateMachineRole', {
+  const stateMachineRole = new Role(stack, `${STACK_NAME}StateMachineRole`, {
     assumedBy: new ServicePrincipal('states.amazonaws.com'),
   });
 
@@ -329,7 +327,7 @@ const buildPollyWorkflow = (
     },
   };
 
-  const stateMachine = new StateMachine(stack, 'ArticlesToSpeechStateMachine', {
+  const stateMachine = new StateMachine(stack, `${STACK_NAME}ContentToSpeechStateMachine`, {
     definitionBody: DefinitionBody.fromString(
       JSON.stringify(languagesStateTemplate)
     ),
