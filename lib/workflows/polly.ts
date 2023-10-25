@@ -10,7 +10,7 @@ import {
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { DefinitionBody, StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
-import { buildPollyWaitLambda } from '../functions/polly_wait';
+import { buildPollyWaitLambda } from '../modules/tts/functions/polly_wait';
 const buildPollyWorkflow = (
   stack: Stack,
   bucket: Bucket,

@@ -1,7 +1,7 @@
 import { App, Stack } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import { buildPreTranslateLambda } from '../../lib/functions/pre_translate';
+import { buildPreTranslateLambda } from '../../lib/modules/translate/functions/pre_translate';
 
 describe('CDK Stack Test', () => {
   let stack: Stack;

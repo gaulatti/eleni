@@ -1,6 +1,6 @@
 import { Stack } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
-import { buildArticlesTable } from '../../lib/database/articles';
+import { buildArticlesTable } from '../../lib/databases/articles';
 
 describe('buildArticlesTable', () => {
   let stack: Stack;

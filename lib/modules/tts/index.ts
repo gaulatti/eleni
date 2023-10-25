@@ -1,0 +1,5 @@
+const buildTtsResources = () => {
+
+}
+
+export { buildTtsResources }

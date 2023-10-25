@@ -1,8 +1,8 @@
 import { Stack } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
-import { buildBucket } from '../../lib/assets/bucket';
-import { buildPollyListenerLambda } from '../../lib/functions/polly_listener';
-import { buildTasksTable } from '../../lib/database/tasks';
+import { buildBucket } from '../../lib/modules/tts/assets/bucket';
+import { buildPollyListenerLambda } from '../../lib/modules/tts/functions/polly_listener';
+import { buildTasksTable } from '../../lib/databases/tasks';
 
 describe('buildBucket', () => {
   let stack: Stack;

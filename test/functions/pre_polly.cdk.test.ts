@@ -1,4 +1,4 @@
-import { buildPrePollyLambda } from '../../lib/functions/pre_polly';
+import { buildPrePollyLambda } from '../../lib/modules/tts/functions/pre_polly';
 import { App, Stack } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';

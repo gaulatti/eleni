@@ -1,32 +1,31 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { Construct } from 'constructs';
-import { buildBucket } from './assets/bucket';
-import { buildArticlesTable } from './database/articles';
-import { buildTasksTable } from './database/tasks';
+import { buildDatabases } from './databases';
 import { buildGetLambda } from './functions/get';
-import { buildMergeFilesLambda } from './functions/merge_files';
-import { buildPrePollyLambda } from './functions/pre_polly';
-import { buildPreTranslateLambda } from './functions/pre_translate';
 import { buildTriggerLambda } from './functions/trigger';
+import { buildTranslateModule } from './modules/translate';
+import { buildBucket } from './modules/tts/assets/bucket';
+import { buildMergeFilesLambda } from './modules/tts/functions/merge_files';
+import { buildPollyListenerLambda } from './modules/tts/functions/polly_listener';
+import { buildPollyWaitLambda } from './modules/tts/functions/polly_wait';
+import { buildPrePollyLambda } from './modules/tts/functions/pre_polly';
 import { buildPollyWorkflow } from './workflows/polly';
-import { buildPollyListenerLambda } from './functions/polly_listener';
-import { buildPollyWaitLambda } from './functions/polly_wait';
 export class EleniStack extends Stack {
   constructor(scope: Construct, uuid: string, props?: StackProps) {
     super(scope, uuid, props);
 
-    const articlesTable = buildArticlesTable(this);
-    const tasksTable = buildTasksTable(this);
+    const { contentTable, tasksTable } = buildDatabases(this);
+    const { preTranslateLambda } = buildTranslateModule(this);
+
     const pollyListenerLambda = buildPollyListenerLambda(this, tasksTable);
     const pollyWaitLambda = buildPollyWaitLambda(this, tasksTable);
     const bucket = buildBucket(this, pollyListenerLambda);
-    const getLambda = buildGetLambda(this, articlesTable, bucket);
-    const preTranslateLambda = buildPreTranslateLambda(this);
+    const getLambda = buildGetLambda(this, contentTable, bucket);
     const prePollyLambda = buildPrePollyLambda(this);
     const mergeFilesLambda = buildMergeFilesLambda(
       this,
-      articlesTable,
+      contentTable,
       tasksTable,
       bucket
     );
@@ -67,9 +66,9 @@ export class EleniStack extends Stack {
       prePollyLambda,
       mergeFilesLambda,
       pollyWaitLambda,
-      pollyListenerLambda,
+      pollyListenerLambda
     );
 
-    const triggerLambda = buildTriggerLambda(this, articlesTable, stateMachine);
+    const triggerLambda = buildTriggerLambda(this, contentTable, stateMachine);
   }
 }

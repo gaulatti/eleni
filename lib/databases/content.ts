@@ -6,9 +6,9 @@ import {
   Table,
 } from 'aws-cdk-lib/aws-dynamodb';
 
-const buildArticlesTable = (stack: Stack) => {
-  const table: Table = new Table(stack, 'ArticlesTable', {
-    tableName: 'ArticlesTable',
+const buildContentTable = (stack: Stack) => {
+  const table: Table = new Table(stack, 'ContentTable', {
+    tableName: 'ContentTable',
     partitionKey: { name: 'uuid', type: AttributeType.STRING },
     stream: StreamViewType.NEW_IMAGE,
     billingMode: BillingMode.PAY_PER_REQUEST,
@@ -22,4 +22,4 @@ const buildArticlesTable = (stack: Stack) => {
   return table;
 };
 
-export { buildArticlesTable };
+export { buildContentTable };
