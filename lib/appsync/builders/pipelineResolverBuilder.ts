@@ -8,14 +8,13 @@ import { Vpc } from 'aws-cdk-lib/aws-ec2';
 import { ArnPrincipal, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { STACK_NAME } from '../../consts';
 import { capitalizeFirstLetter } from '../utils/strings';
 const createPipelineResolverBuilder = (
   stack: Stack,
   role: Role,
   api: GraphqlApi,
-  vpc: Vpc,
+  vpc: Vpc
 ) => {
   return (name: String, lambdaFunction?: NodejsFunction, entry?: string) => {
     name = capitalizeFirstLetter(name);

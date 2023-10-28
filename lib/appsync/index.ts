@@ -1,5 +1,6 @@
 import { Stack } from 'aws-cdk-lib';
 import {
+  AuthorizationType,
   CfnResolver,
   Definition,
   FieldLogLevel,
@@ -13,9 +14,17 @@ import { createVpc } from './network/vpc';
 import { createPipelineResolverBuilder } from './builders/pipelineResolverBuilder';
 
 const buildAppsyncApi = (stack: Stack, getLambda: NodejsFunction) => {
-  const api = new GraphqlApi(stack, `${STACK_NAME}Api`, {
-    name: `${STACK_NAME}Api`,
+  const api = new GraphqlApi(stack, `${STACK_NAME.toLowerCase()}Api`, {
+    name: `${STACK_NAME.toLowerCase()}Api`,
     definition: Definition.fromFile(path.join(__dirname, 'eleni.graphql')),
+    authorizationConfig: {
+      defaultAuthorization: {
+        authorizationType: AuthorizationType.API_KEY,
+        apiKeyConfig: {
+          name: 'dummyApiKey',
+        },
+      },
+    },
     logConfig: {
       fieldLogLevel: FieldLogLevel.ALL,
     },
