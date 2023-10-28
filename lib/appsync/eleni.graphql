@@ -5,14 +5,16 @@ type IDOutput {
 }
 
 input GetContentAudioInput {
-  url: String
-  uuid: String
+  href: String
+  contentId: String
   language: String
 }
 
 type ContentAudioOutput {
+  code: String
   url: String
 }
+
 
 type ContentAudio {
   url: String!
@@ -23,5 +25,5 @@ type ContentAudio {
 }
 
 type Query {
-  getContentAudio(name: GetContentAudioInput!): ContentAudio
+  getContentAudio(input: GetContentAudioInput!): ContentAudio
 }

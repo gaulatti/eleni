@@ -2,7 +2,6 @@ import { Stack } from 'aws-cdk-lib';
 import { Table } from 'aws-cdk-lib/aws-dynamodb';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { buildTtsContentApi } from './api';
 import { buildGetLambda } from './functions/get';
 import { buildTriggerLambda } from './functions/trigger';
 import { buildPollyWorkflow } from './machine';
@@ -29,8 +28,6 @@ const buildTtsContentWorkflow = (
 
   const triggerLambda = buildTriggerLambda(stack, contentTable, workflow);
   const getLambda = buildGetLambda(stack, contentTable, bucket);
-
-  const api = buildTtsContentApi(stack, getLambda);
 
   return { getLambda };
 };
