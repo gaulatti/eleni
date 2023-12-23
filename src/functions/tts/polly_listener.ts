@@ -4,6 +4,13 @@ import { TaskStatus, getTasksTableInstance } from '../../utils/dal/tasks';
 const client = new SFNClient({});
 const db = getTasksTableInstance(process.env.TABLE_NAME!);
 
+/**
+ * Handles the main logic for the Polly listener.
+ *
+ * @param event - The event object containing the records.
+ * @param _context - The context object.
+ * @param callback - The callback function.
+ */
 const main = async (event: any, _context: any, callback: any) => {
   const { Records } = event;
 

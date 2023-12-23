@@ -26,6 +26,9 @@ enum TaskStatus {
   DELIVERED = 'DELIVERED',
 }
 
+/**
+ * Represents a database client for interacting with tasks.
+ */
 class DBClient {
   private tableName: string;
 
@@ -33,6 +36,10 @@ class DBClient {
     this.tableName = tableName;
   }
 
+  /**
+   * Retrieves a list of tasks from the database.
+   * @returns {Promise<Task[]>} A promise that resolves to an array of tasks.
+   */
   public async list() {
     const command = new ScanCommand({
       TableName: this.tableName,
@@ -47,6 +54,11 @@ class DBClient {
     return [];
   }
 
+  /**
+   * Retrieves a task from the database based on the provided UUID.
+   * @param uuid - The UUID of the task to retrieve.
+   * @returns The retrieved task object, or null if the UUID is falsy.
+   */
   public async get(uuid: string | null | undefined) {
     if (!uuid) return null;
 
@@ -61,6 +73,14 @@ class DBClient {
     return response.Item;
   }
 
+  /**
+   * Creates a new task with the specified parameters.
+   * @param uuid - The UUID of the task.
+   * @param url - The URL associated with the task.
+   * @param token - The token for the task.
+   * @param ttl - The time-to-live value for the task.
+   * @returns An object containing the UUID and URL of the created task.
+   */
   public async create(uuid: string, url: string, token: string, ttl: number) {
     const command = new PutCommand({
       TableName: this.tableName,
@@ -80,6 +100,12 @@ class DBClient {
     return { uuid, url };
   }
 
+  /**
+   * Updates the status of a task.
+   * @param uuid - The UUID of the task.
+   * @param status - The new status of the task.
+   * @returns A promise that resolves to the updated task.
+   */
   public async updateStatus(uuid: string, status: TaskStatus) {
     let UpdateExpression = 'set task_status = :status, updatedAt = :updatedAt';
     let ExpressionAttributeValues: { [k: string]: any } = {
@@ -90,6 +116,14 @@ class DBClient {
     return await this.update(uuid, UpdateExpression, ExpressionAttributeValues);
   }
 
+  /**
+   * Updates a record in the database.
+   * 
+   * @param uuid - The unique identifier of the record.
+   * @param UpdateExpression - The update expression to modify the record.
+   * @param ExpressionAttributeValues - Optional. The attribute values used in the update expression.
+   * @returns A promise that resolves to the updated record.
+   */
   private async update(
     uuid: string,
     UpdateExpression: string,
@@ -108,6 +142,11 @@ class DBClient {
     return await docClient.send(command);
   }
 
+  /**
+   * Queries the database by URL and returns the corresponding item.
+   * @param url - The URL to query by.
+   * @returns The item corresponding to the URL, or null if not found.
+   */
   public async queryByUrl(url: string | null | undefined) {
     if (!url) return null;
     const command = new QueryCommand({
@@ -131,6 +170,12 @@ class DBClient {
   }
 }
 
+/**
+ * Returns an instance of the tasks table from the database.
+ * If the instance does not exist, it creates a new one.
+ * @param tableName - The name of the tasks table.
+ * @returns The tasks table instance.
+ */
 const getTasksTableInstance = (tableName: string) => {
   if (!dbInstance) {
     dbInstance = new DBClient(tableName);

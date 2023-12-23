@@ -7,6 +7,12 @@ import {
 } from 'aws-cdk-lib/aws-dynamodb';
 import { STACK_NAME } from '../consts';
 
+/**
+ * Builds a tasks table in the specified stack.
+ *
+ * @param stack - The stack in which the table will be created.
+ * @returns The created tasks table.
+ */
 const buildTasksTable = (stack: Stack) => {
   const table: Table = new Table(stack, `${STACK_NAME}TasksTable`, {
     tableName: `${STACK_NAME}TasksTable`,

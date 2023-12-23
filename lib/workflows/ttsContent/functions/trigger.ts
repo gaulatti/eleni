@@ -6,6 +6,14 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 import { STACK_NAME } from '../../../consts';
 
+/**
+ * Builds and returns a trigger Lambda function for content-to-speech workflow.
+ *
+ * @param stack - The AWS CloudFormation stack.
+ * @param table - The DynamoDB table.
+ * @param stateMachine - The Step Functions state machine.
+ * @returns The trigger Lambda function.
+ */
 const buildTriggerLambda = (
   stack: Stack,
   table: Table,

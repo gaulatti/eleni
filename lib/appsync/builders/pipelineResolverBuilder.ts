@@ -10,6 +10,15 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { STACK_NAME } from '../../consts';
 import { capitalizeFirstLetter } from '../utils/strings';
+/**
+ * Creates a pipeline resolver builder.
+ *
+ * @param stack - The stack object.
+ * @param role - The role object.
+ * @param api - The GraphQL API object.
+ * @param vpc - The VPC object.
+ * @returns A function that can be used to create pipeline resolvers.
+ */
 const createPipelineResolverBuilder = (
   stack: Stack,
   role: Role,

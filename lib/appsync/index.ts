@@ -13,6 +13,13 @@ import { buildLambdaResolverRole } from './roles/lambdaResolverRole';
 import { createVpc } from './network/vpc';
 import { createPipelineResolverBuilder } from './builders/pipelineResolverBuilder';
 
+/**
+ * Builds and configures an AppSync API.
+ *
+ * @param stack - The AWS CloudFormation stack.
+ * @param getLambda - The Node.js function used for retrieving data.
+ * @returns The configured AppSync API.
+ */
 const buildAppsyncApi = (stack: Stack, getLambda: NodejsFunction) => {
   const api = new GraphqlApi(stack, `${STACK_NAME.toLowerCase()}Api`, {
     name: `${STACK_NAME.toLowerCase()}Api`,

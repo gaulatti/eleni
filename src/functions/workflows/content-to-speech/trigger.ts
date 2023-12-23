@@ -7,6 +7,11 @@ import { getContentTableInstance } from '../../../utils/dal/content';
 const db = getContentTableInstance(process.env.TABLE_NAME!);
 const client = new SFNClient();
 
+/**
+ * Fetches and parses an article from a given URL.
+ * @param url - The URL of the article to fetch and parse.
+ * @returns An object containing the title, byline, and text of the article.
+ */
 const fetchAndParseArticle = async (url: string) => {
   const response = await axios.get(`https://lite.cnn.com${url}`);
   const html = response.data;
@@ -22,6 +27,17 @@ const fetchAndParseArticle = async (url: string) => {
   return { title, byline, text };
 };
 
+/**
+ * Starts the execution of a Step Function workflow.
+ *
+ * @param uuid - The UUID of the workflow.
+ * @param url - The URL of the content.
+ * @param title - The title of the content.
+ * @param text - The text of the content.
+ * @param byline - The byline of the content.
+ * @param language - The language of the content.
+ * @returns A promise that resolves to the execution details.
+ */
 const startStepFunctionExecution = async (
   uuid: string,
   url: string,
@@ -40,6 +56,11 @@ const startStepFunctionExecution = async (
   return execution;
 };
 
+/**
+ * Main function that processes the event records and triggers the content-to-speech workflow.
+ *
+ * @param event - The event object containing the records to process.
+ */
 const main = async (event: any) => {
   for (const record of event.Records) {
     const item = record.dynamodb.NewImage;

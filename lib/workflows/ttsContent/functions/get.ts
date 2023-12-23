@@ -4,6 +4,15 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { STACK_NAME } from '../../../consts';
+
+/**
+ * Builds and returns a Lambda function for retrieving content to speech.
+ *
+ * @param stack - The stack object.
+ * @param table - The table object.
+ * @param bucket - The bucket object.
+ * @returns The constructed Lambda function.
+ */
 const buildGetLambda = (
   stack: Stack,
   table: Table,

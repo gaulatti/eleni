@@ -8,6 +8,12 @@ import {
 } from 'aws-cdk-lib/aws-iam';
 import { STACK_NAME } from '../../consts';
 
+/**
+ * Builds the Lambda resolver role.
+ *
+ * @param stack - The AWS CloudFormation stack.
+ * @returns The Lambda resolver role.
+ */
 const buildLambdaResolverRole = (stack: Stack) => {
   const lambdaRole = new Role(stack, `${STACK_NAME}LambdaServiceRole`, {
     assumedBy: new ServicePrincipal('lambda.amazonaws.com'),

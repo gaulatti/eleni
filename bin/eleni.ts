@@ -4,6 +4,15 @@ import * as cdk from 'aws-cdk-lib';
 import { EleniStack } from '../lib/EleniStack';
 
 const app = new cdk.App();
+
+/**
+ * Entry point for the Eleni application.
+ * Initializes the AWS CDK app and creates an instance of the EleniStack.
+ * @remarks
+ * The EleniStack can be specialized for a specific AWS account and region by uncommenting the 'env' property.
+ * Alternatively, it can be left environment-agnostic by not specifying the 'env' property.
+ * For more information, see the AWS CDK documentation on environments: https://docs.aws.amazon.com/cdk/latest/guide/environments.html
+ */
 new EleniStack(app, 'EleniStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,

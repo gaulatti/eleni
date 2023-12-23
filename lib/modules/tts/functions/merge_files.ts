@@ -6,6 +6,15 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { STACK_NAME } from '../../../consts';
 
+/**
+ * Builds and returns a Lambda function for merging files.
+ *
+ * @param stack - The AWS CloudFormation stack.
+ * @param contentTable - The DynamoDB table for content.
+ * @param tasksTable - The DynamoDB table for tasks.
+ * @param bucket - The S3 bucket.
+ * @returns The Lambda function for merging files.
+ */
 const buildMergeFilesLambda = (
   stack: Stack,
   contentTable: Table,

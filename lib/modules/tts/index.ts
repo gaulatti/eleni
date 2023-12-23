@@ -6,6 +6,14 @@ import { buildPollyWaitLambda } from './functions/polly_wait';
 import { Table } from 'aws-cdk-lib/aws-dynamodb';
 import { buildPrePollyLambda } from './functions/pre_polly';
 
+/**
+ * Builds Text-to-Speech (TTS) resources.
+ *
+ * @param stack - The AWS CloudFormation stack.
+ * @param tasksTable - The DynamoDB table for storing TTS tasks.
+ * @param contentTable - The DynamoDB table for storing TTS content.
+ * @returns An object containing the built TTS resources.
+ */
 const buildTtsResources = (
   stack: Stack,
   tasksTable: Table,

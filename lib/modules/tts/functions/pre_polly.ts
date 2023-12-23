@@ -3,6 +3,12 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { STACK_NAME } from '../../../consts';
 
+/**
+ * Builds and returns the pre-polly lambda function.
+ *
+ * @param stack - The AWS CloudFormation stack.
+ * @returns The pre-polly lambda function.
+ */
 const buildPrePollyLambda = (stack: Stack) => {
   const deliverLambda = new NodejsFunction(
     stack,

@@ -12,8 +12,6 @@ import {
   checkLanguagesPresent,
   delay,
   extractPathWithTrailingSlash,
-  lambdaHttpOutput,
-  sanitizeGetInputs,
 } from '../../../utils';
 import { getContentTableInstance } from '../../../utils/dal/content';
 
@@ -21,6 +19,12 @@ const db = getContentTableInstance(process.env.TABLE_NAME!);
 const client = new S3Client();
 const presigner = new S3RequestPresigner(client.config);
 
+/**
+ * Parses an S3 URL and extracts the bucket name and key.
+ * @param url - The S3 URL to parse.
+ * @returns An object containing the bucket name and key.
+ * @throws Error if the URL is invalid.
+ */
 function parseS3Url(url: string) {
   const match = url.match(/https:\/\/s3\..+\.amazonaws\.com\/([^\/]+)\/(.+)/);
   if (!match || match.length !== 3) {
@@ -32,6 +36,13 @@ function parseS3Url(url: string) {
   };
 }
 
+/**
+ * Main function that processes the event and returns the existing item.
+ *
+ * @param event - The event object containing input parameters.
+ * @param _context - The context object.
+ * @param callback - The callback function to be called with the result.
+ */
 const main = async (event: any, _context: any, callback: any) => {
   const { contentId, href, language } = event.args.input;
   if (!contentId && !href) throw new Error('Missing contentId or url');
@@ -80,7 +91,7 @@ const main = async (event: any, _context: any, callback: any) => {
   }
   if (existingItem) {
     const keys = Object.keys(existingItem['outputs']);
-    const output: { code: string, url: string }[] = [];
+    const output: { code: string; url: string }[] = [];
     await Promise.all(
       keys.map(async (key) => {
         const { Bucket, Key } = parseS3Url(

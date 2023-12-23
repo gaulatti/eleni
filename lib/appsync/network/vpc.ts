@@ -1,6 +1,18 @@
 import { Stack } from 'aws-cdk-lib';
-import { InterfaceVpcEndpoint, InterfaceVpcEndpointAwsService, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import {
+  InterfaceVpcEndpoint,
+  InterfaceVpcEndpointAwsService,
+  SubnetType,
+  Vpc,
+} from 'aws-cdk-lib/aws-ec2';
 import { STACK_NAME } from '../../consts';
+
+/**
+ * Creates a VPC with the specified configuration.
+ *
+ * @param stack - The CloudFormation stack.
+ * @returns The created VPC.
+ */
 const createVpc = (stack: Stack) => {
   const vpc = new Vpc(stack, `${STACK_NAME}Vpc`, {
     cidr: '10.0.0.0/16',
@@ -20,10 +32,14 @@ const createVpc = (stack: Stack) => {
     ],
   });
 
-  new InterfaceVpcEndpoint(stack, `${STACK_NAME}ApoquindoVpcSecretsManagerEndpoint`, {
-    service: InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
-    vpc
-  })
+  new InterfaceVpcEndpoint(
+    stack,
+    `${STACK_NAME}ApoquindoVpcSecretsManagerEndpoint`,
+    {
+      service: InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+      vpc,
+    }
+  );
 
   return vpc;
 };

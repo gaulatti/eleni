@@ -9,6 +9,19 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { DefinitionBody, StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 import { STACK_NAME } from '../../consts';
+
+/**
+ * Builds the Polly workflow state machine.
+ *
+ * @param stack - The AWS CloudFormation stack.
+ * @param bucket - The S3 bucket.
+ * @param preTranslateLambda - The Lambda function for pre-translation.
+ * @param prePollyLambda - The Lambda function for pre-Polly processing.
+ * @param mergeFilesLambda - The Lambda function for merging audio files.
+ * @param pollyWaitLambda - The Lambda function for waiting on Polly tasks.
+ * @param pollyListenerLambda - The Lambda function for listening to Polly events.
+ * @returns The constructed Polly workflow state machine.
+ */
 const buildPollyWorkflow = (
   stack: Stack,
   bucket: Bucket,

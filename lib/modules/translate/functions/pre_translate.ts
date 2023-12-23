@@ -3,6 +3,12 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { STACK_NAME } from '../../../consts';
 
+/**
+ * Builds and returns a pre-translate lambda function.
+ *
+ * @param stack - The stack object.
+ * @returns The pre-translate lambda function.
+ */
 const buildPreTranslateLambda = (stack: Stack) => {
   const deliverLambda = new NodejsFunction(
     stack,

@@ -15,6 +15,10 @@ export type LanguageObject = {
   translate: string;
 };
 
+/**
+ * Array of language objects used by Polly.
+ * @type {LanguageObject[]}
+ */
 const pollyLanguages: LanguageObject[] = [
   {
     code: 'en-US',

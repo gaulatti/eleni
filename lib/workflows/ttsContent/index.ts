@@ -6,6 +6,19 @@ import { buildGetLambda } from './functions/get';
 import { buildTriggerLambda } from './functions/trigger';
 import { buildPollyWorkflow } from './machine';
 
+/**
+ * Builds the TTS content workflow.
+ *
+ * @param stack - The stack object.
+ * @param bucket - The bucket object.
+ * @param contentTable - The content table object.
+ * @param preTranslateLambda - The pre-translate lambda function.
+ * @param prePollyLambda - The pre-Polly lambda function.
+ * @param mergeFilesLambda - The merge files lambda function.
+ * @param pollyWaitLambda - The Polly wait lambda function.
+ * @param pollyListenerLambda - The Polly listener lambda function.
+ * @returns An object containing the getLambda function.
+ */
 const buildTtsContentWorkflow = (
   stack: Stack,
   bucket: Bucket,

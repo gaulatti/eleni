@@ -4,6 +4,13 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { STACK_NAME } from '../../../consts';
 
+/**
+ * Builds and returns a NodejsFunction for the Polly Listener Lambda.
+ *
+ * @param stack - The stack object.
+ * @param table - The table object.
+ * @returns The Polly Listener Lambda function.
+ */
 const buildPollyListenerLambda = (stack: Stack, table: Table) => {
   const pollyListenerLambda = new NodejsFunction(
     stack,

@@ -4,6 +4,13 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { STACK_NAME } from '../../../consts';
 
+/**
+ * Builds and returns a Polly Wait Lambda function.
+ *
+ * @param stack - The CloudFormation stack.
+ * @param table - The DynamoDB table.
+ * @returns The Polly Wait Lambda function.
+ */
 const buildPollyWaitLambda = (stack: Stack, table: Table) => {
   const pollyWaitLambda = new NodejsFunction(
     stack,
